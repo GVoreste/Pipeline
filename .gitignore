@@ -1,6 +1,6 @@
-esempi_VHDL_2/
 *
 !*/
 !**/*.vhd
 !**/*.txt
 !**/Makefile
+!**/*.c
