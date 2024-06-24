@@ -32,22 +32,17 @@ begin
 
     STIMULUS_GEN: process is
     begin
-        wait for clk_T*4+clk_T/2;
+        wait for clk_T*4+clk_T/4;
         tb_PCstall <= '1';
         wait for clk_T*3;
         tb_PCstall <= '0';
-        wait for clk_T*3+clk_T/4;
+        wait for clk_T*3;
         tb_PCsrc <= '1';
         wait for clk_T*3;
         tb_nextInstr <= x"00ff00aa00f00a00";
         wait for clk_T*2;
         tb_PCsrc <= '0';
         wait for clk_T*10-clk_T/4;
-        tb_PCsrc <= '1';
-        tb_nextInstr <= x"00000000000000A0";
-        wait for clk_T;
-        tb_PCsrc <= '0';
-        wait for clk_T*10;
         tb_PCsrc <= '1';
         tb_nextInstr <= (others => '0');
         wait for clk_T*100;

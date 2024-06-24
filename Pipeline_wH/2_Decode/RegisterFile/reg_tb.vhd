@@ -37,7 +37,7 @@ begin
 
     STIMULUS_GEN: process is
     begin
-        wait for clk_T/2;
+        wait for clk_T/4;
         tb_we <= '1';
         wait for 2*clk_T;
         tb_reg_W <= std_logic_vector(to_unsigned(1,5));

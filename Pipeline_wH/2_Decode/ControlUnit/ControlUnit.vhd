@@ -2,7 +2,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.numeric_std.all;
 
-entity Fetch is
+entity ControllUnit is
 port (
        i_opcode:     in std_logic_vector(6 downto 0):= (others => '0');
 	   o_branch:     out std_logic := '0';
@@ -13,18 +13,9 @@ port (
        o_regsrc:     out std_logic := '0';
        o_ALUOp:      out std_logic_vector(1 downto 0):= B"00";
        );
-end Fetch;
+end ControllUnit;
 
-architecture RTL of Fetch is
-    component sync_ram
-        port (
-            clk       : in  std_logic;
-            i_we      : in  std_logic;
-            i_address : in  std_logic_vector;
-            i_data    : in  std_logic_vector;
-            o_data    : out std_logic_vector
-        );
-    end component sync_ram;
+architecture RTL of ControllUnit is
 begin
     case i_opcode is
         when B"0110011" =>           -- R-format
