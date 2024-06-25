@@ -3,10 +3,10 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.Numeric_Std.all; 
 
 
-entity controlunit_tb is
-end entity controlunit_tb;
+entity controllunit_tb is
+end entity controllunit_tb;
 
-architecture RTL of controlunit_tb is
+architecture RTL of controllunit_tb is
     signal tb_opcode:     std_logic_vector(6 downto 0):= (others => '0');
     constant clk_T : time := 10 ns;
 

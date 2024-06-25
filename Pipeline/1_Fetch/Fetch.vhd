@@ -41,7 +41,7 @@ begin
     begin
         if rising_edge(clk) and i_reg_stall/='1' then
             o_PC <= r_PC;
-            o_instr <= r_instr;
+            -- o_instr <= r_instr;
         end if;
     end process;
 
@@ -51,7 +51,7 @@ begin
         i_we => '0',
         i_address => r_PC,
         i_data => ZERO_DATA,
-        o_data => r_instr
+        o_data => o_instr
     );
     PC_BLOCK: PC
     Port Map (

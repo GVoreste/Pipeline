@@ -17,7 +17,25 @@ end registers;
 
 architecture RTL of registers is 
     type reg_file is array (0 to 31) of std_logic_vector(63 downto 0);
-    signal reg: reg_file;
+    signal reg: reg_file :=(
+        0  => x"FFFF0000AAAA0000",
+        1  => x"FFFF0000AAAA0001",
+        2  => x"FFFF0000AAAA0002",
+        3  => x"FFFF0000AAAA0003",
+        4  => x"FFFF0000AAAA0004",
+        5  => x"FFFF0000AAAA0005",
+        6  => x"FFFF0000AAAA0006",
+        7  => x"FFFF0000AAAA0007",
+        8  => x"FFFF0000AAAA0008",
+        9  => x"FFFF0000AAAA0009",
+        10 => x"FFFF0000AAAA000A",
+        11 => x"FFFF0000AAAA000B",
+        12 => x"FFFF0000AAAA000C",
+        13 => x"FFFF0000AAAA000D",
+        14 => x"FFFF0000AAAA000E",
+        15 => x"FFFF0000AAAA000F",
+        others => (others => '0')
+    );
 begin 
 	process(clk)
 	begin
