@@ -2,96 +2,78 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.Numeric_Std.all; 
 
--- DA FINIREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-
 entity ALU_tb is
 end entity ALU_tb;
 
 architecture RTL of ALU_tb is
-    signal tb_clk : std_logic := '0';
-    signal tb_operand_A:      std_logic_vector(63 downto 0):= (others => '0');
-    signal tb_operand_B: 	  std_logic_vector(63 downto 0):= (others => '0');
-    signal tb_ALUOp:      std_logic_vector(4 downto 0):= (others => '0');
-    signal tb_data:      std_logic_vector(63 downto 0):= (others => '0');
-    signal tb_we:        std_logic := '0';
-    signal o_data_A:    std_logic_vector(63 downto 0):= (others => '0');
-    signal o_data_B:    std_logic_vector(63 downto 0):= (others => '0');
+    type operand_table is array(0 to 99) of std_logic_vector(63 downto 0);
+    signal tb_operand_A: std_logic_vector(63 downto 0):= (others => '0');
+    signal tb_operand_B: std_logic_vector(63 downto 0):= (others => '0');
+    constant tb_operand_A_table: operand_table := (
+        0 => x"AAAA00000000AAAA",
+        1 => x"FFFFFFFFFFFFFFFF",
+        2 => x"AAAAAAAAAAAAAAAA",
+        3 => x"5555000000005555",
+        4 => x"FFFFFFFFFFFFFFFF",
+        5 => x"3333666666663333",
+        6 => x"0123456789ABCDEF",
+        7 => x"0000000000000000",
+        8 => x"0123456789ABCDEF",
+        others => (others => '0')
+    );
+    constant tb_operand_B_table: operand_table := (
+        0 => x"AAAA00000000AAAA",
+        1 => x"FFFFFFFFFFFFFFFF",
+        2 => x"5555555555555555",
+        3 => x"5555000000005555",
+        4 => x"0000000000000001",
+        5 => x"6666333333336666",
+        6 => x"0000000000000000",
+        7 => x"FEDCBA9876543210",
+        8 => x"FEDCBA9876543210",
+        others => (others => '0')
+    );
+    signal tb_ALUfunc:      std_logic_vector(3 downto 0):= (others => '0');   
     constant clk_T : time := 10 ns;
 
-    component ALUisters 
-        port ( clk:         in std_logic;
-               i_ALU_A:     in std_logic_vector(4 downto 0):= (others => '0');
-               i_ALU_B: 	in std_logic_vector(4 downto 0):= (others => '0');
-               i_ALU_W:      in std_logic_vector(4 downto 0):= (others => '0');
-               i_data:      in std_logic_vector(63 downto 0):= (others => '0');
-               i_we:        in std_logic := '0';
-               o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
-               o_data_B:    out std_logic_vector(63 downto 0):= (others => '0')
-               );
-    end component ALUisters;
+    component ALU
+        port ( 
+            i_operand_A: in std_logic_vector(63 downto 0):= (others => '0');
+            i_operand_B: in std_logic_vector(63 downto 0):= (others => '0');
+            i_ALUfunc:   in std_logic_vector( 3 downto 0):= (others => '0');
+            o_Zero:      out std_logic := '0';
+            o_ALUres:    out std_logic_vector(63 downto 0):=(others => '0')
+            );
+    end component ALU;
 begin
-    CLK: process is
-    begin
-        wait for clk_T/2;
-        tb_clk <= not tb_clk;
-    end process CLK;
-
     STIMULUS_GEN: process is
     begin
-        wait for clk_T/4;
-        tb_we <= '1';
-        wait for 2*clk_T;
-        tb_ALU_W <= std_logic_vector(to_unsigned(1,5));
-        tb_data  <= x"00ff00ff00aa0001";
-        wait for clk_T*2;
-        tb_ALU_A  <= std_logic_vector(to_unsigned(1,5));
-        tb_ALU_W <= std_logic_vector(to_unsigned(2,5));
-        tb_data  <= x"00ff00ff00aa0002";
-        wait for clk_T*2;
-        tb_ALU_B  <= std_logic_vector(to_unsigned(2,5));
-        tb_ALU_W <= std_logic_vector(to_unsigned(3,5));
-        tb_data  <= x"00ff00ff00aa0003";
-        wait for clk_T*2;
-        tb_ALU_A  <= std_logic_vector(to_unsigned(3,5));
-        tb_ALU_W <= std_logic_vector(to_unsigned(29,5));
-        tb_data  <= x"00ff00ff00aa001e";
-        wait for clk_T*2;
-        tb_ALU_B  <= std_logic_vector(to_unsigned(29,5));
-        tb_ALU_W <= std_logic_vector(to_unsigned(30,5));
-        tb_data  <= x"00ff00ff00aa001f";
-        wait for clk_T*2;
-        tb_ALU_A  <= std_logic_vector(to_unsigned(30,5));
-        tb_ALU_W <= std_logic_vector(to_unsigned(31,5));
-        tb_data  <= x"00ff00ff00aa0020";
-        wait for clk_T*2;
-        tb_ALU_B  <= std_logic_vector(to_unsigned(31,5));
-        tb_ALU_W <= std_logic_vector(to_unsigned(0,5));
-        tb_data  <= x"55ffffffffffffaa";
-        wait for clk_T*2;
-        tb_ALU_A  <= std_logic_vector(to_unsigned(0,5));
-        wait for clk_T;
-        tb_we <= '0';
-        tb_ALU_B  <= std_logic_vector(to_unsigned(0,5));
-        wait for clk_T*2;
-        tb_ALU_W <= std_logic_vector(to_unsigned(3,5));
-        tb_data  <= x"55ffffffffffffaa";
-        wait for clk_T*2;
-        tb_ALU_W <= std_logic_vector(to_unsigned(29,5));
-        tb_data  <= x"55ffffffffffffaa";
-        tb_ALU_A  <= std_logic_vector(to_unsigned(29,5));
-        tb_ALU_B  <= std_logic_vector(to_unsigned(3,5));
-        wait for clk_T*100;
+        wait for clk_T/2;
+        for i in 0 to 99
+        loop
+            tb_operand_A <= tb_operand_A_table(i);
+            tb_operand_B <= tb_operand_A_table(i);
+            
+            tb_ALUfunc   <= "0010"; -- ADD
+            wait for clk_T;
+            tb_ALUfunc   <= "0110"; -- SUB
+            wait for clk_T;
+            tb_ALUfunc   <= "0000"; -- OR
+            wait for clk_T;
+            tb_ALUfunc   <= "0001"; -- AND
+            wait for clk_T;
+            tb_ALUfunc   <= "1111"; -- UNKOWN
+            wait for clk_T;
+        end loop;
+        wait;
     end process STIMULUS_GEN;
 
-    ALU_file_to_test: ALUisters
+    ALU_file_to_test: ALU
     Port Map (
-        clk      => tb_clk,
-        i_ALU_A  => tb_ALU_A,
-        i_ALU_B  => tb_ALU_B,
-        i_ALU_W   => tb_ALU_W,
-        i_data   => tb_data,
-        i_we     => tb_we,
-        o_data_A => o_data_A,
-        o_data_B => o_data_B
+        i_operand_A => tb_operand_A,
+        i_operand_B => tb_operand_B,
+        i_ALUfunc => tb_ALUfunc,
+        o_Zero => open,
+        o_ALUres => open
     );
 end architecture RTL;
