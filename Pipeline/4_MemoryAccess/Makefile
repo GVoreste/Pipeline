@@ -1,5 +1,7 @@
-SRC_FILE=ram
-TB_FILE=ram_tb
+SUBCOMPONENTS:= Ram/ram
+TARGET_SUB:=$(addsuffix .o,$(SUBCOMPONENTS))
+SRC_FILE=MemoryAccess
+TB_FILE=MemoryAccess_tb
 GHDL=ghdl
 GHDLFLAGS=
 GHDLRUNFLAGS=--stop-time=1500ns --vcd=$(VCDFILE)
@@ -9,9 +11,12 @@ VCDFILE=$(SRC_FILE).vcd
 all : analyze elab run
 
 # analyze
-analyze: 
+analyze: $(TARGET_SUB) 
 	$(GHDL) -a $(SRC_FILE).vhd
 	$(GHDL) -a $(TB_FILE).vhd
+
+%.o: %.vhd
+	$(GHDL) -a $<
 
 # Elaborate target.  Almost useless
 elab : 

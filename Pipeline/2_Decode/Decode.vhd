@@ -4,9 +4,12 @@ use IEEE.numeric_std.all;
 
 entity Decode is
     port (
-        clk:         in std_logic;
-        i_instr:     in std_logic_vector(31 downto 0):= (others => '0');
-        i_PC: 	     in std_logic_vector(63 downto 0):= (others => '0');
+        clk:           in std_logic;
+        i_instr:       in std_logic_vector(31 downto 0):= (others => '0');
+        i_PC: 	       in std_logic_vector(63 downto 0):= (others => '0');
+        i_reg_to_write: in std_logic_vector(4 downto 0):= (others => '0');
+        i_data_to_reg: in std_logic_vector(63 downto 0):= (others => '0');
+        i_reg_we:      in std_logic := '0';
         o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
         o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
         o_data_B:    out std_logic_vector(63 downto 0):= (others => '0');
@@ -103,9 +106,9 @@ begin
         clk => clk,
         i_reg_A => i_instr(24 downto 20),
         i_reg_B => i_instr(19 downto 15),
-        i_reg_W => i_instr(11 downto 7),
-        i_data =>  open,
-        i_we =>    '0',
+        i_reg_W => i_reg_to_write,
+        i_data =>  i_data_to_reg,
+        i_we =>    i_reg_we,
         o_data_A =>  r_data_A,
         o_data_B =>  r_data_B
     );

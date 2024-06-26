@@ -87,6 +87,9 @@ architecture RTL of Decode_tb is
         clk:         in std_logic;
         i_instr:     in std_logic_vector(31 downto 0):= (others => '0');
         i_PC: 	     in std_logic_vector(63 downto 0):= (others => '0');
+        i_reg_to_write: in std_logic_vector(4 downto 0):= (others => '0');
+        i_data_to_reg: in std_logic_vector(63 downto 0):= (others => '0');
+        i_reg_we:      in std_logic := '0';
         o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
         o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
         o_data_B:    out std_logic_vector(63 downto 0):= (others => '0');
@@ -128,6 +131,9 @@ begin
         clk => tb_clk,       
         i_instr => tb_instr,
         i_PC => tb_PC,
+        i_reg_to_write => (others => '0'),
+        i_data_to_reg => (others => '0'),
+        i_reg_we => '0',
         o_PC => open,
         o_data_A => open,
         o_data_B => open, 
