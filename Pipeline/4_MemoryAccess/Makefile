@@ -1,4 +1,4 @@
-SUBCOMPONENTS:= Ram/ram
+SUBCOMPONENTS:= Ram/data_ram
 TARGET_SUB:=$(addsuffix .o,$(SUBCOMPONENTS))
 SRC_FILE=MemoryAccess
 TB_FILE=MemoryAccess_tb

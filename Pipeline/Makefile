@@ -21,17 +21,17 @@ analyze:
 	ghdl -a 3_Execute/ALUcontrol/ALUcontrol.vhd
 	ghdl -a 3_Execute/Execute.vhd
 
-	ghdl -a 4_MemoryAccess/Ram/ram.vhd
+	ghdl -a 4_MemoryAccess/Ram/data_ram.vhd
 	ghdl -a 4_MemoryAccess/MemoryAccess.vhd
 
 	ghdl -a Processor.vhd
-#	ghdl -a Processor_tb.vhd
+	ghdl -a Processor_tb.vhd
 
 elab:
-#	ghdl -e Processor_tb
+	ghdl -e Processor_tb
 
 run:
-#	ghdl -r Processor_tb --stop-time=1500ns --vcd=Processor.vhd
+	ghdl -r Processor_tb --stop-time=5000ns --vcd=Processor.vcd
 
 asc : $(EXE) $(EXE).debug 
 
@@ -50,7 +50,7 @@ $(EXE): $(SRC_FILE)
 	echo 'fattoooooos'
 
 # Run target
-# run : 
+#run : 
 # 	$(GHDL) -r $(TB_FILE)  $(GHDLRUNFLAGS)
 
 .PHONY: clean

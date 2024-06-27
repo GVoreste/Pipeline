@@ -1,5 +1,5 @@
-SRC_FILE=ram
-TB_FILE=ram_tb
+SRC_FILE=data_ram
+TB_FILE=data_ram_tb
 GHDL=ghdl
 GHDLFLAGS=
 GHDLRUNFLAGS=--stop-time=1500ns --vcd=$(VCDFILE)

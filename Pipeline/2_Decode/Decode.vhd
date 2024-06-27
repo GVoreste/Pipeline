@@ -66,6 +66,7 @@ architecture RTL of Decode is
     signal r_func3:  std_logic_vector( 2 downto 0):= (others => '0');
     signal r_data_A: std_logic_vector(63 downto 0):= (others => '0');
     signal r_data_B: std_logic_vector(63 downto 0):= (others => '0');
+    signal r_imm: std_logic_vector(63 downto 0):= (others => '0');
 
     signal r_branch:    std_logic := '0';
     signal r_mem_read:  std_logic := '0';
@@ -84,6 +85,7 @@ begin
             o_func3 <= r_func3;
             o_data_A <= r_data_A;
             o_data_B <= r_data_B;
+            o_imm <= r_imm;
 
             o_branch <= r_branch;
             o_mem_read <= r_mem_read;
@@ -104,8 +106,8 @@ begin
     REGISTER_FILE: registers
     Port Map(
         clk => clk,
-        i_reg_A => i_instr(24 downto 20),
-        i_reg_B => i_instr(19 downto 15),
+        i_reg_A => i_instr(19 downto 15),
+        i_reg_B => i_instr(24 downto 20),
         i_reg_W => i_reg_to_write,
         i_data =>  i_data_to_reg,
         i_we =>    i_reg_we,
@@ -128,7 +130,7 @@ begin
     IMMEDIATE_GEN: ImmGen
     Port Map(
         i_instr => i_instr,
-        o_imm  => o_imm
+        o_imm  => r_imm
     );
     
 end architecture;

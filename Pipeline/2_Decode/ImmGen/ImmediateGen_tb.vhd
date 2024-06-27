@@ -21,26 +21,26 @@ begin
     variable opcode: std_logic_vector(6 downto 0):= (others => '0');
     begin
         wait for clk_T/2;
-        opcode := B"0000001";
+        opcode := B"0000011";
         tb_instr <= B"111110100101_00000_000_00000" & opcode;
         wait for 2*clk_T;
-        opcode := B"0000010";
+        opcode := B"0100011";
         tb_instr <= B"1111101_00000_00000_000_00101" & opcode;
         wait for 2*clk_T;
-        opcode := B"0000011";
+        opcode := B"1100011";
         tb_instr <=  B"1_11101_00000_00000_000_00101_1" & opcode;
         wait for 2*clk_T;
         tb_instr <=  x"FFFF_FFFF";
         wait for clk_T;
         tb_instr <=  x"0000_0000";
         wait for clk_T/2;
-        opcode := B"0000001";
+        opcode := B"0000011";
         tb_instr <= B"010110101111_00000_000_00000" & opcode;
         wait for 2*clk_T;
-        opcode := B"0000010";
+        opcode := B"0100011";
         tb_instr <= B"0101101_00000_00000_000_01111" & opcode;
         wait for 2*clk_T;
-        opcode := B"0000011";
+        opcode := B"1100011";
         tb_instr <=  B"0_01101_00000_00000_000_01111_1" & opcode;
         wait for 50*clk_T;
 

@@ -8,14 +8,14 @@ entity CPU is
         clk: in std_logic := '0';
         power_on: in std_logic :='0';
         i_we: in std_logic :='0';
-        i_re: out std_logic :='0';
+        i_re: in std_logic :='0';
         i_data: in std_logic_vector(63 downto 0);
-        i_instr: in std_logic_vector(32 downto 0);
+        i_instr: in std_logic_vector(31 downto 0);
         i_data_pos: in std_logic_vector(63 downto 0);
-        i_instr_pos: in std_logic_vector(32 downto 0);
+        i_instr_pos: in std_logic_vector(63 downto 0);
         o_sel_instr: out std_logic_vector(63 downto 0);
         o_sel_data: out std_logic_vector(63 downto 0);
-        o_read_instr: out std_logic_vector(32 downto 0);
+        o_read_instr: out std_logic_vector(31 downto 0);
         o_read_data: out std_logic_vector(63 downto 0)
     );
 end entity;

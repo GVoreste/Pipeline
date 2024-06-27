@@ -29,7 +29,8 @@ begin
 				if unsigned(o_next_pc) > to_unsigned(MAX_PC-4,64) then
 					o_next_pc <= std_logic_vector(to_unsigned(0,64));
 				else
-					o_next_pc <= std_logic_vector(unsigned(o_next_pc) + to_unsigned(4,64));
+					o_next_pc <= std_logic_vector(unsigned(o_next_pc) + to_unsigned(1,64));
+					-- o_next_pc <= std_logic_vector(unsigned(o_next_pc) + to_unsigned(4,64));
 				end if;
 			end if;
 			o_pc <= o_next_pc;

@@ -17,11 +17,11 @@ begin
     begin
         opcode := i_instr(6 downto 0);
         case opcode is
-            when B"0000001" =>           -- I-Type
+            when B"0000011" =>           -- I-Type (Imm and LD)
                imm12 := i_instr(31 downto 20);
-            when B"0000010" =>           -- S-Type (LD and SD)
+            when B"0100011" =>           -- S-Type (SD)
                imm12 := i_instr(31 downto 25) & i_instr(11 downto 7);
-            when B"0000011" =>           -- SB-Type (Branch)
+            when B"1100011" =>           -- SB-Type (Branch)
                imm12 := i_instr(31) & i_instr(7) & i_instr(30 downto 25) & i_instr(11 downto 8);
             when others =>               -- NOP and unknown
                imm12 := x"000";
