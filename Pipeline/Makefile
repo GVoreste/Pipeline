@@ -1,63 +1,87 @@
+SRC_FILE=bubble_sort.c
+ifdef REVERSE
+EXE=r_bubble_sort
+CFLAG=-DDESC
+else
 EXE=bubble_sort
+CFLAG=
+endif
+SRC_FILE_VHDL=Processor
 CC=gcc
-SRC_FILE=$(EXE).c
+RISCV_PFX=riscv64-elf-
+GHDL=ghdl
 OBJ_FILE=$(EXE).o
 
+SUBCOMPONENTS_FETCH:=$(addprefix 1_Fetch/,Fetch PC/PC Ram/ram)
+SUBCOMPONENTS_DECODE:=$(addprefix 2_Decode/,Decode ControlUnit/ControlUnit ImmGen/ImmediateGen RegisterFile/reg)
+SUBCOMPONENTS_EXECUTE:=$(addprefix 3_Execute/,Execute ALU/ALU ALU/Adder ALUcontrol/ALUcontrol)
+SUBCOMPONENTS_MEMACC:=$(addprefix 4_MemoryAccess/,MemoryAccess Ram/data_ram)
+SUBCOMPONENTS:=$(SUBCOMPONENTS_FETCH) $(SUBCOMPONENTS_DECODE) $(SUBCOMPONENTS_EXECUTE) $(SUBCOMPONENTS_MEMACC)
+
+TARGET_SUB:=$(addsuffix .o,$(notdir $(SUBCOMPONENTS)))
+GHDLRUNFLAGS=--stop-time=1500ns --vcd=$(VCDFILE)
+VCDFILE=$(SRC_FILE_VHDL).vcd
+TB_FILE=$(SRC_FILE_VHDL)_tb
+
+.SUFFIXES:
 # Default target : elaborate
-all: asc analyze elab run
+all: $(VCDFILE) $(EXE) $(EXE).x  $(EXE)_print  $(EXE)_TEXT.bin $(EXE)_DATA.bin $(EXE)_TEXT.txt $(EXE)_DATA.txt
 
-analyze:
-	ghdl -a 1_Fetch/PC/PC.vhd
-	ghdl -a 1_Fetch/Ram/ram.vhd
-	ghdl -a 1_Fetch/Fetch.vhd
 
-	ghdl -a 2_Decode/ControlUnit/ControlUnit.vhd
-	ghdl -a 2_Decode/ImmGen/ImmediateGen.vhd
-	ghdl -a 2_Decode/RegisterFile/reg.vhd
-	ghdl -a 2_Decode/Decode.vhd
+TMP=$(filter %/$(patsubst %.o,%.vhd,$@),$^)
+$(TB_FILE).o $(SRC_FILE_VHDL).o $(TARGET_SUB)  : $(SRC_FILE_VHDL).vhd $(TB_FILE).vhd $(addsuffix .vhd,$(SUBCOMPONENTS))
+	$(GHDL) -a $(if $(TMP),$(TMP),$(patsubst %.o,%.vhd,$@))
+	
+%_tb : $(TB_FILE).o $(SRC_FILE_VHDL).o $(TARGET_SUB) 
+	$(GHDL) -e $(TB_FILE)
 
-	ghdl -a 3_Execute/ALU/Adder.vhd
-	ghdl -a 3_Execute/ALU/ALU.vhd
-	ghdl -a 3_Execute/ALUcontrol/ALUcontrol.vhd
-	ghdl -a 3_Execute/Execute.vhd
+%.vcd: $(shell echo %_tb | tr '[:upper:]' '[:lower:]')
+	$(GHDL) -r $<  $(GHDLRUNFLAGS)
 
-	ghdl -a 4_MemoryAccess/Ram/data_ram.vhd
-	ghdl -a 4_MemoryAccess/MemoryAccess.vhd
-
-	ghdl -a Processor.vhd
-	ghdl -a Processor_tb.vhd
-
-elab:
-	ghdl -e Processor_tb
-
-run:
-	ghdl -r Processor_tb --stop-time=5000ns --vcd=Processor.vcd
-
-asc : $(EXE) $(EXE).debug 
-
-desc: r_$(EXE) r_$(EXE).debug
-
-r_$(EXE).debug: $(SRC_FILE)
-	$(CC) -DDESC -DDEBUG $(SRC_FILE) -o $@
-
-$(EXE).debug: $(SRC_FILE)
-	$(CC) -DDEBUG $(SRC_FILE) -o $@
-
-r_$(EXE): $(SRC_FILE)
-	echo 'fattoooooos'
 
 $(EXE): $(SRC_FILE)
-	echo 'fattoooooos'
+	$(CC) $(CFLAG) -g -Wall $< -o $@
 
-# Run target
-#run : 
-# 	$(GHDL) -r $(TB_FILE)  $(GHDLRUNFLAGS)
+$(EXE)_print: $(SRC_FILE)
+	$(CC) $(CFLAG) -DDEBUG -g -Wall $< -o $@
 
+
+$(EXE).x: $(EXE).o
+	$(RISCV_PFX)ld $< -o $@
+
+$(EXE).o: $(EXE).asm
+	$(RISCV_PFX)as $< -o $@
+
+CFLAGS=$(CFLAG) -S -O1 -march=rv64i -mabi=lp64
+ifdef VERBOSE
+CFLAGS+= -fverbose-asm
+endif 
+
+$(EXE).asm: $(SRC_FILE)
+	$(RISCV_PFX)$(CC) $(CFLAGS)  $< -o $@
+
+$(EXE)_TEXT.txt: $(EXE)_TEXT.bin
+	hexdump $< -e '4/1 "%02x" "\n"' > $@
+
+$(EXE)_DATA.txt: $(EXE)_DATA.bin
+	hexdump $< -e '4/1 "%02x" "\n"' > $@
+
+$(EXE)_TEXT.bin: $(EXE).o
+	$(RISCV_PFX)objcopy --reverse-bytes=4 --only-section=.text -O binary $< $@
+$(EXE)_DATA.bin: $(EXE).o
+	$(RISCV_PFX)objcopy --reverse-bytes=4 --only-section=.data -O binary $< $@
+	
 .PHONY: clean
 
 clean:
-	rm -f $(EXE) r_$(EXE)
-	rm -f $(EXE).debug r_$(EXE).debug
+	
 	ghdl --clean
-	rm -f *.cf
-	rm -f *.vcd
+	rm -f work-obj*.cf
+	rm -f $(VCDFILE)
+	rm -f $(patsubst %.c,%,$(SRC_FILE)) r_$(patsubst %.c,%,$(SRC_FILE))
+	rm -f *_print
+	rm -f *.bin
+	rm -f *.txt
+	rm -f *.x
+	rm -f *.o
+	rm -f *.asm

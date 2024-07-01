@@ -98,10 +98,12 @@ begin
             r_func7 <= i_instr(31 downto 25);
             r_func3 <= i_instr(14 downto 12);
             r_PC <= i_PC;
-            r_reg_W <= i_instr(11 downto 7);
+            
 
         end if;
     end process;
+    
+    r_reg_W <= i_instr(11 downto 7);
 
     REGISTER_FILE: registers
     Port Map(

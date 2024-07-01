@@ -1,29 +1,29 @@
 SRC_FILE=ram
-TB_FILE=ram_tb
 GHDL=ghdl
-GHDLFLAGS=
 GHDLRUNFLAGS=--stop-time=1500ns --vcd=$(VCDFILE)
 VCDFILE=$(SRC_FILE).vcd
+TB_FILE=$(SRC_FILE)_tb
 
+LOWER_TB=$(shell echo $(TB_FILE) | tr '[:upper:]' '[:lower:]')
+.SUFFIXES:
 # Default target : elaborate
-all : analyze elab run
+all : $(VCDFILE)
 
 # analyze
-analyze: 
-	$(GHDL) -a $(SRC_FILE).vhd
-	$(GHDL) -a $(TB_FILE).vhd
+%.o: %.vhd
+	$(GHDL) -a $<
 
 # Elaborate target.  Almost useless
-elab : 
+%_tb : $(TB_FILE).o $(SRC_FILE).o
 	$(GHDL) -e $(TB_FILE)
 
-# Run target
-run : 
-	$(GHDL) -r $(TB_FILE)  $(GHDLRUNFLAGS)
+%.vcd: $(shell echo %_tb | tr '[:upper:]' '[:lower:]')
+	$(GHDL) -r $<  $(GHDLRUNFLAGS)
 
 .PHONY: clean
 
 clean:
 	$(GHDL) --clean
-	rm -f *.cf
-	rm -f *.vcd
+	rm -f work-obj*.cf
+	rm -f $(VCDFILE)
+

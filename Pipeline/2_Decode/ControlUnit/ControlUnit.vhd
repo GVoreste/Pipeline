@@ -44,7 +44,7 @@ begin
                 o_ALUsrc    <= '1';
                 o_regsrc    <= '1';
                 o_ALUOp     <= B"00";
-            when B"1100011" =>           -- BEQ
+            when B"1100011" =>           -- BEQ BGE
                 o_branch    <= '1';
                 o_mem_read  <= '0';
                 o_mem_write <= '0';
@@ -52,6 +52,14 @@ begin
                 o_ALUsrc    <= '0';
                 o_regsrc    <= '-';
                 o_ALUOp     <= B"01";
+            when B"0010011" =>           -- ADDI   (TO TEST)
+                o_branch    <= '0';
+                o_mem_read  <= '0';
+                o_mem_write <= '0';
+                o_reg_write <= '1';
+                o_ALUsrc    <= '1';
+                o_regsrc    <= '0';
+                o_ALUOp     <= B"00";
             when others =>               -- NOP and unknown
                 o_branch    <= '0';
                 o_mem_read  <= '0';

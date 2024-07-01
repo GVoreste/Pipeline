@@ -2,16 +2,16 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.Numeric_Std.all; 
 
-entity ram_tb is
-end entity ram_tb;
+entity data_ram_tb is
+end entity data_ram_tb;
 
-architecture RTL of ram_tb is
+architecture RTL of data_ram_tb is
     signal tb_clk     : std_logic := '0';
     signal tb_we      : std_logic := '0';
     signal tb_re      : std_logic := '0';
     signal tb_address : std_logic_vector(63 downto 0):= (others => '0');
-    signal tb_data    : std_logic_vector(31 downto 0):= (others => '0');
-    signal o_data     : std_logic_vector(31 downto 0):= (others => '0');
+    signal tb_data    : std_logic_vector(63 downto 0):= (others => '0');
+    signal o_data     : std_logic_vector(63 downto 0):= (others => '0');
     constant clk_T    : time := 10 ns; 
 
     component sync_data_ram is
@@ -39,7 +39,7 @@ begin
         wait for clk_T/2;
         for i in 0 to 31
         loop
-            tb_data <= std_logic_vector(to_unsigned(i+256,32));
+            tb_data <= std_logic_vector(to_unsigned(i+256,64));
             tb_address <= std_logic_vector(to_unsigned(i,64));
             wait for clk_T;
         end loop;

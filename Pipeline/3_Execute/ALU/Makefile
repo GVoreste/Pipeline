@@ -1,33 +1,28 @@
-SRC_FILE=reg
-TB_FILE=reg_tb
+SRC_FILES=ALU Adder
 GHDL=ghdl
-GHDLFLAGS=
-GHDLRUNFLAGS=--stop-time=1500ns --vcd=$(VCDFILE)
-VCDFILE=$(SRC_FILE).vcd
+GHDLRUNFLAGS=--stop-time=1500ns
+VCDFILES=$(addsuffix .vcd,$(SRC_FILES))
+TB_FILES=$(addsuffix _tb,$(SRC_FILES))
 
+LOWER_TBS=$(shell echo $(TB_FILES) | tr '[:upper:]' '[:lower:]')
+.SUFFIXES:
 # Default target : elaborate
-all : analyze elab run
+all : $(VCDFILES)
 
 # analyze
-analyze: 
-	$(GHDL) -a Adder.vhd
-	$(GHDL) -a Adder_tb.vhd
-	$(GHDL) -a ALU.vhd
-	$(GHDL) -a ALU_tb.vhd
+%.o: %.vhd
+	$(GHDL) -a $<
 
 # Elaborate target.  Almost useless
-elab : 
-	$(GHDL) -e Adder_tb
-	$(GHDL) -e ALU_tb
+%_tb : $(addsuffix .o,$(TB_FILES) $(SRC_FILES))
+	$(GHDL) -e $@
 
-# Run target
-run : 
-	$(GHDL) -r Adder_tb  --stop-time=1500ns --vcd=Adder.vcd
-	$(GHDL) -r ALU_tb    --stop-time=1500ns --vcd=ALU.vcd
+%.vcd: $(shell echo %_tb | tr '[:upper:]' '[:lower:]')
+	$(GHDL) -r $<  $(GHDLRUNFLAGS) --vcd=$@
 
 .PHONY: clean
 
 clean:
 	$(GHDL) --clean
-	rm -f *.cf
-	rm -f *.vcd
+	rm -f work-obj*.cf
+	rm -f $(VCDFILES)

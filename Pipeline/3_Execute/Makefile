@@ -1,34 +1,30 @@
-SUBCOMPONENTS:= ALU/ALU  ALU/Adder ALUcontrol/ALUcontrol
-TARGET_SUB:=$(addsuffix .o,$(SUBCOMPONENTS))
+SUBCOMPONENTS:= ALU/ALU ALU/Adder ALUcontrol/ALUcontrol
+TARGET_SUB:=$(addsuffix .o,$(notdir $(SUBCOMPONENTS)))
 SRC_FILE=Execute
-TB_FILE=Execute_tb
 GHDL=ghdl
-GHDLFLAGS=
 GHDLRUNFLAGS=--stop-time=1500ns --vcd=$(VCDFILE)
 VCDFILE=$(SRC_FILE).vcd
+TB_FILE=$(SRC_FILE)_tb
 
+LOWER_TB=$(shell echo $(TB_FILE) | tr '[:upper:]' '[:lower:]')
+
+.SUFFIXES:
 # Default target : elaborate
-all : analyze elab run
+all : $(VCDFILE)
 
-# analyze
-analyze: $(TARGET_SUB) 
-	$(GHDL) -a $(SRC_FILE).vhd
-	$(GHDL) -a $(TB_FILE).vhd
+%.o : $(SRC_FILE).vhd $(TB_FILE).vhd $(addsuffix .vhd,$(SUBCOMPONENTS))
+	$(GHDL) -a $(filter %$(patsubst %.o,%.vhd,$@), $^)
+	
 
-%.o: %.vhd
-	$(GHDL) -a $<
-
-# Elaborate target.  Almost useless
-elab : 
+%_tb : $(TB_FILE).o $(SRC_FILE).o $(TARGET_SUB) 
 	$(GHDL) -e $(TB_FILE)
 
-# Run target
-run : 
-	$(GHDL) -r $(TB_FILE)  $(GHDLRUNFLAGS)
+%.vcd: $(shell echo %_tb | tr '[:upper:]' '[:lower:]')
+	$(GHDL) -r $<  $(GHDLRUNFLAGS)
 
 .PHONY: clean
 
 clean:
 	$(GHDL) --clean
-	rm -f *.cf
-	rm -f *.vcd
+	rm -f work-obj*.cf
+	rm -f $(VCDFILE)
