@@ -1,28 +1,30 @@
-SRC_FILE=PC
+ADDER=Adder_fetch
+PC=PC
+SRC_FILES=$(ADDER) $(PC)
 GHDL=ghdl
-GHDLRUNFLAGS=--stop-time=1500ns --vcd=$(VCDFILE)
-VCDFILE=$(SRC_FILE).vcd
-TB_FILE=$(SRC_FILE)_tb
+GHDLRUNFLAGS=--stop-time=1500ns 
+VCDFILES=$(addsuffix .vcd,$(SRC_FILES))
+TB_FILES=$(addsuffix _tb,$(SRC_FILES))
 
-LOWER_TB=$(shell echo $(TB_FILE) | tr '[:upper:]' '[:lower:]')
+LOWER_TBS=$(shell echo $(TB_FILES) | tr '[:upper:]' '[:lower:]')
 .SUFFIXES:
 # Default target : elaborate
-all : $(VCDFILE)
+all : $(VCDFILES)
 
 # analyze
 %.o: %.vhd
 	$(GHDL) -a $<
 
 # Elaborate target.  Almost useless
-%_tb : $(TB_FILE).o $(SRC_FILE).o
-	$(GHDL) -e $(TB_FILE)
+%_tb : $(addsuffix .o,$(TB_FILES) $(SRC_FILES))
+	$(GHDL) -e $@
 
 %.vcd: $(shell echo %_tb | tr '[:upper:]' '[:lower:]')
-	$(GHDL) -r $<  $(GHDLRUNFLAGS)
+	$(GHDL) -r $<  $(GHDLRUNFLAGS) --vcd=$@
 
 .PHONY: clean
 
 clean:
 	$(GHDL) --clean
 	rm -f work-obj*.cf
-	rm -f $(VCDFILE)
+	rm -f $(VCDFILES)

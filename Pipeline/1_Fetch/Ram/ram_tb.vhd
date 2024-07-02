@@ -16,6 +16,7 @@ architecture RTL of ram_tb is
     component sync_ram is
         port (
           clk       : in  std_logic;
+          i_reg_stall: in  std_logic;
           i_we      : in  std_logic;
           i_address : in  std_logic_vector;
           i_data    : in  std_logic_vector;
@@ -56,6 +57,7 @@ begin
     INST_MEM: sync_ram
     Port Map(
         clk => tb_clk,
+        i_reg_stall => '0',
         i_we => tb_we,
         i_address => tb_address,
         i_data => tb_data,

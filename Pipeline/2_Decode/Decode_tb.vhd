@@ -90,6 +90,7 @@ architecture RTL of Decode_tb is
         i_reg_to_write: in std_logic_vector(4 downto 0):= (others => '0');
         i_data_to_reg: in std_logic_vector(63 downto 0):= (others => '0');
         i_reg_we:      in std_logic := '0';
+        i_stall:      in std_logic := '0';
         o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
         o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
         o_data_B:    out std_logic_vector(63 downto 0):= (others => '0');
@@ -98,6 +99,7 @@ architecture RTL of Decode_tb is
         o_func7:     out std_logic_vector(6 downto 0):= (others => '0');
         o_func3:     out std_logic_vector(2 downto 0):= (others => '0');
         -- Controll signal
+        o_l_branch:     out std_logic := '0';
         o_branch:     out std_logic := '0';
         o_mem_read:   out std_logic := '0';
         o_mem_write:  out std_logic := '0';
@@ -134,6 +136,7 @@ begin
         i_reg_to_write => (others => '0'),
         i_data_to_reg => (others => '0'),
         i_reg_we => '0',
+        i_stall  => '0',
         o_PC => open,
         o_data_A => open,
         o_data_B => open, 
@@ -142,6 +145,7 @@ begin
         o_func7 => open,   
         o_func3 => open,    
         -- Controll signal
+        o_l_branch => open, 
         o_branch => open,   
         o_mem_read => open,  
         o_mem_write => open, 

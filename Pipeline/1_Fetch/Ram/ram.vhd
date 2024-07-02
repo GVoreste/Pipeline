@@ -16,13 +16,14 @@ entity sync_ram is
   );
   port (
     clk       : in  std_logic;
+    i_reg_stall: in  std_logic;
     i_we      : in  std_logic := '0';
     i_address : in  std_logic_vector(address_size-1 downto 0):= (others => '0');
     i_data    : in  std_logic_vector(data_size-1 downto 0):= (others => '0');
     o_data    : out std_logic_vector
   );
   constant RAM_SIZE: integer := 256;
-  constant LAST_ADDR: unsigned(i_data'range) := to_unsigned(RAM_SIZE-1,i_data'length);
+  constant LAST_ADDR: unsigned(i_address'range) := to_unsigned(RAM_SIZE-1,i_address'length);
 end entity sync_ram;
 
 architecture RTL of sync_ram is
@@ -40,36 +41,109 @@ architecture RTL of sync_ram is
     -- 32 to 35 => x"0000F020",
     -- 36 to 39 => x"0000F024",
     -- 40 to 49 => x"0000F028",
+
+
+    -- 0  => x"00000000",
+    -- 1 => B"0100000" & B"00010" & B"00001" & B"000" & B"00011" & B"0110011", -- SUB x2 - x1 => x3 = D - 5 = 8
+    -- 2  => x"00000000",
+    -- 3  => x"00000000",
+    -- 4  => x"00000000",
+    -- 5  => x"00000000",
+    -- 6  => x"002" & B"00000" & B"101" & B"00001" & B"0000011", -- LD in x1
+    -- 7  => x"00000000",
+    -- 8  => x"00000000",
+    -- 9  => x"00000000",
+    -- 10 => x"00000000",
+    -- 11  => x"008" & B"00000" & B"101" & B"00010" & B"0000011", -- LD in x2
+    -- 12  => x"00000000",
+    -- 13  => x"00000000",
+    -- 14  => x"00000000",
+    -- 15 => x"00000000",
+    -- 16 => B"0100000" & B"00001" & B"00010" & B"000" & B"00011" & B"0110011", -- SUB x2 - x1 => x3 = D - 5 = 8
+    -- others => x"00000000"
+
+    -- 0  => x"00000000",
+    -- 1  => x"006" & B"00000" & B"101" & B"00101" & B"0010011", -- ADDI 06,x0 => x5
+    -- 2  => x"00000000",
+    -- 3  => x"00000000",
+    -- 4  => x"00000000",
+    -- 5  => x"00000000",
+    -- 6  => x"00A" & B"00101" & B"101" & B"00101" & B"0010011", -- ADDI 0A x5 => x5 
+    -- 7  => x"00000000",
+    -- 8  => x"00000000",
+    -- 9  => x"00000000",
+    -- 10 => x"00000000",
+    -- 11  => B"1111111" & B"00101" & B"00101" & B"101" & B"11101" & B"0100011", -- SD x5 in x5 - 2
+    -- 12  => x"00000000",
+    -- 13  => x"00000000",
+    -- 14  => x"00000000",
+    -- 15 =>  x"00000000",
+    -- 16 => x"00D" & B"00000" & B"101" & B"00111" & B"0000011", -- LD x0 + (x5-2) in x7
+    -- others => x"00000000"
+
+    -- 0  => x"00000000",
+    -- 1  => x"006" & B"00000" & B"101" & B"00000" & B"0010011", -- ADDI 06, x0 => x0
+    -- 2  => x"00000000",
+    -- 3  => x"00000000",
+    -- 4  => x"00000000",
+    -- 5  => x"00000000",
+    -- 6  => x"00F" & B"00000" & B"101" & B"11111" & B"0010011", -- ADDI 0F, x0 => x31 
+    -- 7  => x"00000000",
+    -- 8  => x"00000000",
+    -- 9  => x"00000000",
+    -- 10 => x"00000000",
+    -- 11  => B"0000000" & B"11111" & B"00000" & B"101" & B"00100" & B"1100011", -- BEQ x31,x0 go - 010
+    -- 12  => x"00000000",
+    -- 13  => x"00000000",
+    -- 14  => x"00000000",
+    -- 15 =>  x"00000000",
+    -- 16 => x"000" & B"11111" & B"101" & B"01010" & B"0000011", -- LD x31+0 in x10
+    -- others => x"00000000"
+
     0  => x"00000000",
-    1  => x"002" & B"00000" & B"101" & B"00001" & B"0000011", -- LD in x1
+    1  => x"006" & B"00000" & B"111" & B"00011" & B"0010011", -- ADDI 06, x0 => x3
     2  => x"00000000",
     3  => x"00000000",
     4  => x"00000000",
     5  => x"00000000",
-    6  => x"008" & B"00000" & B"101" & B"00010" & B"0000011", -- LD in x2
+    6  => x"006" & B"00000" & B"111" & B"00100" & B"0010011", -- ADDI 06, x0 => x4 
     7  => x"00000000",
     8  => x"00000000",
     9  => x"00000000",
     10 => x"00000000",
-    11 => B"0100000" & B"00010" & B"00001" & B"000" & B"00011" & B"0110011", -- SUB x2 - x1 => x3 = D - 5 = 8
+    -- 11  => B"1111111" & B"00011" & B"00100" & B"111" & B"11011" & B"1100011", -- BEQ x3,x4 go - 010
+    11  => B"0000000" & B"00011" & B"00100" & B"111" & B"00100" & B"1100011", -- BEQ x3,x4 go - 010
+    12  => x"0FF" & B"00100" & B"111" & B"00000" & B"0010011", -- ADDI FF, x4 => x0 
+    13  => x"00000000",
+    14  => x"00000000",
+    15 =>  x"00000000",
+    16 => x"000" & B"11111" & B"101" & B"01010" & B"0000011", -- LD x31+0 in x10
     others => x"00000000"
 
 
-    -- 1  => x"00058593", -- addi    a1,a1,360 # 11168 <array>  to change imm
-    -- 2  => x"06058613", -- addi    a2,a1,96
-    -- 3  => x"02c0006f", -- j       10158 <main+0x38>     to change imm (POSSO CAMBIARLO IN BEQ)
-    -- 4  => x"00878793", -- addi    a5,a5,8
-    -- 5  => x"00c78e63", -- beq     a5,a2,10150 <main+0x30> to change imm
-    -- 6  => x"0007b703", -- ld      a4,0(a5)
-    -- 7  => x"0087b683", -- ld      a3,8(a5)
-    -- 8  => x"fee6d8e3", -- bge     a3,a4,10130 <main+0x10> to change imm L'opcode e' uguale a beq, cambia func3
-    -- 9  => x"00d7b023", -- sd      a3,0(a5)
-    -- 10 => x"00e7b423", -- sd      a4,8(a5)
-    -- 11 => x"fe5ff06f", -- j       10130 <main+0x10> to change imm
-    -- 12 => x"ff860613", -- addi    a2,a2,-8
-    -- 13 => x"00b60663", -- beq     a2,a1,10160 <main+0x40> to change imm
-    -- 14 => x"00058793", -- j       10138 <main+0x18> mv      a5,a1
-    -- 15 => x"fddff06f", -- to change imm
+    -- 0  => x"00000000", --      nop               # START
+
+    -- 1  => x"00000093", --      addi    x1,x0,0   # *array[0] = 0
+    -- 2  => x"00c08113", --      addi    x2,x1,12  # (i+1) = N
+    -- 3  => x"00000b63", --      beq     x0,x0,11  #             go .L2 (3+11)
+
+    -- 4  => x"00128293", -- .L3  addi    x5,x5,1   # j++
+    -- 5  => x"00228763", --      beq     x5,x2,7   # if j=(i+1)  go .L7 (5+7)
+
+    -- 6  => x"0002b183", -- .L4  ld      x3,0(x5)  # a = array[j]
+    -- 7  => x"0012b203", --      ld      x4,1(x5)  # b = array[j+1]
+    -- 8  => x"00325463", --      bge     x4,x3,4   # if b >= a   go .L3 (8-4)    L'opcode e' uguale a beq, cambia func3
+    -- 9  => x"0042b023", --      sd      x4,0(x5)  # array[j]   = b
+    -- 10 => x"0032b0a3", --      sd      x3,1(x5)  # array[j+1] = a
+    -- 11 => x"fe0009e3", --      beq     x0,x0,-7  #             go .L3 (11-7)
+
+    -- 12 => x"fff10113", -- .L7  addi    x2,x2,-1  # (i+1)--
+    -- 13 => x"00110363", --      beq     x2,x1,3   # if (i+1)=0  go .L5 (13+3)
+
+    -- 14 => x"00008293", -- .L2  addi    x5,x1,0   # j = 0
+    -- 15 => x"fe0007e3", --      beq     x0,x0,-9  #             go .L4 (15-9)
+
+    -- 16 => x"00000063"  -- .L5  beq     x0,x0,0   # STOP
     -- others => x"00000000"
 
 
@@ -79,23 +153,30 @@ architecture RTL of sync_ram is
 
 begin
     RamProc: process(clk) is
-    variable address: std_logic_vector(i_address'range);
     begin
         if rising_edge(clk) then
-            if unsigned(i_address) > LAST_ADDR then 
-              address := std_logic_vector(LAST_ADDR);
-            else
-              address := i_address;
-            end if;
-            
-            if i_we = '1' then
-              ram(to_integer(unsigned(address))) <= i_data;
-            end if;
-            read_i_address <= address;
+          --if i_reg_stall /= '1' then
+            --if i_we = '1' then
+            --  ram(to_integer(unsigned(read_i_address))) <= i_data;
+            --end if;
+            o_data <= ram(to_integer(unsigned(read_i_address)));
+          --end if;
         end if;
     end process RamProc;
 
-    o_data <= ram(to_integer(unsigned(read_i_address)));
+    process(i_address) is
+    begin
+      if i_reg_stall /= '1' then
+        if unsigned(i_address) > LAST_ADDR then
+          read_i_address <= std_logic_vector(LAST_ADDR);
+        else
+          read_i_address <= i_address;
+        end if;
+        --read_i_address <= std_logic_vector(LAST_ADDR) when unsigned(i_address) > LAST_ADDR else i_address;
+      else
+        read_i_address <= read_i_address;
+      end if;
+    end process;
 
 end architecture RTL;
 

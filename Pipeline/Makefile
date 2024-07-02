@@ -12,11 +12,11 @@ RISCV_PFX=riscv64-elf-
 GHDL=ghdl
 OBJ_FILE=$(EXE).o
 
-SUBCOMPONENTS_FETCH:=$(addprefix 1_Fetch/,Fetch PC/PC Ram/ram)
+SUBCOMPONENTS_FETCH:=$(addprefix 1_Fetch/,Fetch PC/PC PC/Adder_fetch Ram/ram)
 SUBCOMPONENTS_DECODE:=$(addprefix 2_Decode/,Decode ControlUnit/ControlUnit ImmGen/ImmediateGen RegisterFile/reg)
 SUBCOMPONENTS_EXECUTE:=$(addprefix 3_Execute/,Execute ALU/ALU ALU/Adder ALUcontrol/ALUcontrol)
 SUBCOMPONENTS_MEMACC:=$(addprefix 4_MemoryAccess/,MemoryAccess Ram/data_ram)
-SUBCOMPONENTS:=$(SUBCOMPONENTS_FETCH) $(SUBCOMPONENTS_DECODE) $(SUBCOMPONENTS_EXECUTE) $(SUBCOMPONENTS_MEMACC)
+SUBCOMPONENTS:=HazardDetectionUnit $(SUBCOMPONENTS_FETCH) $(SUBCOMPONENTS_DECODE) $(SUBCOMPONENTS_EXECUTE) $(SUBCOMPONENTS_MEMACC)
 
 TARGET_SUB:=$(addsuffix .o,$(notdir $(SUBCOMPONENTS)))
 GHDLRUNFLAGS=--stop-time=1500ns --vcd=$(VCDFILE)

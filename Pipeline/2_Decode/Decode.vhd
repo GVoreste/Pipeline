@@ -10,6 +10,7 @@ entity Decode is
         i_reg_to_write: in std_logic_vector(4 downto 0):= (others => '0');
         i_data_to_reg: in std_logic_vector(63 downto 0):= (others => '0');
         i_reg_we:      in std_logic := '0';
+        i_stall:      in std_logic := '0';
         o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
         o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
         o_data_B:    out std_logic_vector(63 downto 0):= (others => '0');
@@ -18,6 +19,7 @@ entity Decode is
         o_func7:     out std_logic_vector(6 downto 0):= (others => '0');
         o_func3:     out std_logic_vector(2 downto 0):= (others => '0');
         -- Controll signal
+        o_l_branch:   out std_logic := '0';
         o_branch:     out std_logic := '0';
         o_mem_read:   out std_logic := '0';
         o_mem_write:  out std_logic := '0';
@@ -75,33 +77,58 @@ architecture RTL of Decode is
     signal r_ALUsrc:    std_logic := '0';
     signal r_regsrc:    std_logic := '0';
     signal r_ALUOp:     std_logic_vector(1 downto 0):= B"00";
+
+    signal l_branch:    std_logic := '0';
+    signal l_mem_read:  std_logic := '0';
+    signal l_mem_write: std_logic := '0';
+    signal l_reg_write: std_logic := '0';
+    signal l_ALUsrc:    std_logic := '0';
+    signal l_regsrc:    std_logic := '0';
+    signal l_ALUOp:     std_logic_vector(1 downto 0):= B"00";
 begin
+    r_func7 <= i_instr(31 downto 25);
+    r_func3 <= i_instr(14 downto 12);
+    r_PC <= i_PC;
+    o_l_branch <= r_branch;
     process(clk) 
     begin
         if rising_edge(clk) then
             o_PC <= r_PC;
+            o_data_A <= r_data_A;
+            o_data_B <= r_data_B;
             o_reg_W <= r_reg_W;
             o_func7 <= r_func7;
             o_func3 <= r_func3;
-            o_data_A <= r_data_A;
-            o_data_B <= r_data_B;
             o_imm <= r_imm;
 
-            o_branch <= r_branch;
-            o_mem_read <= r_mem_read;
-            o_mem_write <= r_mem_write;
-            o_reg_write <= r_reg_write;
-            o_ALUsrc    <= r_ALUsrc;
-            o_regsrc    <= r_regsrc;
-            o_ALUOp <= r_ALUOp;
-
-            r_func7 <= i_instr(31 downto 25);
-            r_func3 <= i_instr(14 downto 12);
-            r_PC <= i_PC;
-            
-
+                
+            if i_stall /= '1' then
+                r_branch <= l_branch;
+                r_mem_read <= l_mem_read;
+                r_mem_write <= l_mem_write;
+                r_reg_write <= l_reg_write ;
+                r_ALUsrc    <= l_ALUsrc;
+                r_regsrc    <= l_regsrc;
+                r_ALUOp <= l_ALUOp; 
+                  
+            else
+                r_branch <= '0';
+                r_mem_read <= '0';
+                r_mem_write <= '0';
+                r_reg_write <= '0';
+                r_ALUsrc    <= '0';
+                r_regsrc    <= '0';
+                r_ALUOp <= B"00"; 
+            end if;
         end if;
     end process;
+    o_branch <= r_branch;
+    o_mem_read <= r_mem_read;
+    o_mem_write <= r_mem_write;
+    o_reg_write <= r_reg_write;
+    o_ALUsrc    <= r_ALUsrc;
+    o_regsrc    <= r_regsrc;
+    o_ALUOp <= r_ALUOp;
     
     r_reg_W <= i_instr(11 downto 7);
 
@@ -120,13 +147,13 @@ begin
     CONTOLL_UNIT: ControllUnit
     Port Map(
         i_opcode => i_instr(6 downto 0),
-        o_branch => r_branch,
-        o_mem_read => r_mem_read,
-        o_mem_write => r_mem_write,
-        o_reg_write => r_reg_write,
-        o_ALUsrc    => r_ALUsrc,
-        o_regsrc    => r_regsrc,
-        o_ALUOp => r_ALUOp
+        o_branch => l_branch,
+        o_mem_read => l_mem_read,
+        o_mem_write => l_mem_write,
+        o_reg_write => l_reg_write,
+        o_ALUsrc    => l_ALUsrc,
+        o_regsrc    => l_regsrc,
+        o_ALUOp => l_ALUOp
     );
 
     IMMEDIATE_GEN: ImmGen

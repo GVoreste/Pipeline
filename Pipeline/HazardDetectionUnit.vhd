@@ -5,9 +5,17 @@ use IEEE.Numeric_Std.all;
 
 entity HDU is
     port(
-        -- clk: in std_logic := '0';
-        o_PC_stall: out std_logic := 0;
-        o_Fetch_reg_stall: out std_logic := 0;
-        o_Decode_reg_stall: out std_logic := 0;
+        i_branch: in std_logic;
+        o_PC_stall: out std_logic;
+        o_Fetch_reg_stall: out std_logic;
+        o_Decode_reg_stall: out std_logic
     );
 end entity;
+
+
+architecture RTL of HDU is
+begin
+    -- o_PC_stall <= '1' when i_branch='1' else '0';
+    o_Fetch_reg_stall <= '1' when i_branch='1' else '0';
+
+end architecture RTL;

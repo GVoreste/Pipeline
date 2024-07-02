@@ -30,7 +30,7 @@ begin
                imm12 := x"000";
         end case;
         if imm12(11) = '1' then
-            o_imm <= x"1111111111111" & imm12;
+            o_imm <= x"FFFFFFFFFFFFF" & imm12;
         else
             o_imm <= x"0000000000000" & imm12;
         end if;

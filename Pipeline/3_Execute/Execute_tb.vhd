@@ -87,7 +87,7 @@ end record;
         ),
         3 => (  -- SD
             PC      =>  "----------------------------------------------------------------",
-            data_A  => x"AAAA000000000001",
+            data_A  => x"0000000000000001",
             data_B  => x"AAAA55555555AAAA",
             imm     => x"000000000000FFFF",
             reg_W   =>  "-----",
@@ -206,12 +206,14 @@ end record;
         o_data_MEM:   out std_logic_vector(63 downto 0):= (others => '0');
         o_reg_W:      out std_logic_vector(4 downto 0):= (others => '0');
         -- Controll signal
+        o_bge:        out std_logic;
         o_branch:     out std_logic := '0';
         o_mem_read:   out std_logic := '0';
         o_mem_write:  out std_logic := '0';
         o_reg_write:  out std_logic := '0';
         o_regsrc:     out std_logic := '0';
-        o_Zero:       out std_logic := '0'
+        o_Zero:       out std_logic := '0';
+        o_Pos:        out std_logic
     );
     end component;
 begin
@@ -257,11 +259,13 @@ begin
         o_data_MEM =>  open,
         o_reg_W =>     open,
         -- Controll signal
+        o_bge => open,
         o_branch =>    open,
         o_mem_read =>  open,
         o_mem_write => open,
         o_reg_write => open,
         o_regsrc =>    open,
-        o_Zero =>      open
+        o_Zero =>      open,
+        o_Pos => open
     );
 end architecture RTL;

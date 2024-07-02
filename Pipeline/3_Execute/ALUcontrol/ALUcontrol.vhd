@@ -7,6 +7,7 @@ port (
        i_ALUOp:      in std_logic_vector(1 downto 0):= (others => '0');
        i_func3:      in std_logic_vector(2 downto 0):= (others => '0');
        i_func7:      in std_logic_vector(6 downto 0):= (others => '0');
+       o_bge:        out std_logic := '0';
        o_ALUfunc:    out std_logic_vector(3 downto 0):= B"0000"
        );
 end ALUControl;
@@ -20,8 +21,14 @@ begin
     case i_ALUOp is
         when B"00" =>     -- LD or SD
             o_ALUfunc <= B"0010";  -- ADD
+            o_bge <= '0';
         when B"01" =>     -- BEQ
             o_ALUfunc <= B"0110";  -- SUB
+            if i_func3=B"101" then
+                o_bge <= '1';
+            else
+                o_bge <= '0';
+            end if;
         when others =>    -- R-type
             if    i_func7=B"0000000"  and i_func3=B"000" then
                 o_ALUfunc <= B"0010";  -- ADD
@@ -34,6 +41,7 @@ begin
             else
                 o_ALUfunc <= B"0010";  -- ADD
             end if;
+            o_bge <= '0';
     end case;
     end process;
 end architecture;

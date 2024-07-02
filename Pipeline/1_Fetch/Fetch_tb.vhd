@@ -37,11 +37,16 @@ begin
 
     STIMULUS_GEN: process is
     begin
-        wait for clk_T*9+clk_T/2;
-        tb_PCstall <= '1';
-        wait for clk_T*2;
-        tb_PCstall <= '0';
+        wait for clk_T/2;
+
+        wait for clk_T*7;
+
+        tb_reg_stall <= '1';
+        wait for clk_T;
+        tb_reg_stall <= '0';
+
         wait for clk_T*5;
+
         tb_nextInstr <= std_logic_vector(to_unsigned(0,64));
         wait for clk_T;
         tb_PCsrc <= '1';
@@ -49,14 +54,21 @@ begin
         tb_nextInstr <= std_logic_vector(to_unsigned(50,64));
         wait for clk_T*5;
         tb_PCsrc <= '0';
+
         wait for clk_T*5;
+
         tb_PCsrc <= '1';
         tb_nextInstr <= std_logic_vector(to_unsigned(0,64));
         wait for clk_T;
-        tb_reg_stall <= '1';
-        wait for clk_T*10;
-        tb_reg_stall <= '0';
-        wait for clk_T*100;
+        tb_PCsrc <= '0';
+
+        wait for clk_T*9;
+
+        tb_PCstall <= '1';
+        wait for clk_T;
+        tb_PCstall <= '0';
+
+        wait for clk_T;
     end process STIMULUS_GEN;
 
     Fetch_to_test: Fetch

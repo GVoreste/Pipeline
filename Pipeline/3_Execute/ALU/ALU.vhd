@@ -8,6 +8,7 @@ port (
 	   i_operand_B: in std_logic_vector(63 downto 0):= (others => '0');
        i_ALUfunc:   in std_logic_vector( 3 downto 0):= (others => '0');
        o_Zero:      out std_logic := '0';
+       o_Pos:       out std_logic := '0';
        o_ALUres:    out std_logic_vector(63 downto 0):=(others => '0')
        );
 end ALU;
@@ -59,7 +60,8 @@ begin
         else
             o_Zero <= '0';
         end if;
-    end process;   
+    end process;  
+    o_Pos <= l_ALUres(63); 
     o_ALUres <= l_ALUres;
     ADDER_istance: Adder
     Port Map(

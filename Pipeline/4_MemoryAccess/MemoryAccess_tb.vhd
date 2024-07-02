@@ -31,12 +31,14 @@ architecture RTL of MemoryAccess_tb is
         i_reg_W: in std_logic_vector(4 downto 0);
         i_nextInstr: in std_logic_vector(63 downto 0);
         -- Control signals
+        i_bge: in std_logic;
         i_branch: in std_logic := '0';
         i_mem_read: in std_logic := '0';
         i_mem_write: in std_logic := '0';
         i_reg_write: in std_logic := '0';
         i_regsrc: in std_logic := '0';
         i_Zero: in std_logic := '0';
+        i_Pos: in std_logic;
         --
         -- OUT
         --
@@ -76,12 +78,14 @@ begin
         i_data_MEM => tb_mem_acc_input(74 downto 11),
         i_reg_W => tb_mem_acc_input(10 downto 6),
         -- Control signals
-        i_reg_write => tb_mem_acc_input(5),
-        i_regsrc => tb_mem_acc_input(4),
+        i_bge => '0',
         i_branch => tb_mem_acc_input(3),
         i_mem_read => tb_mem_acc_input(2),
         i_mem_write => tb_mem_acc_input(1),
+        i_reg_write => tb_mem_acc_input(5),
+        i_regsrc => tb_mem_acc_input(4),
         i_Zero => tb_mem_acc_input(0),
+        i_Pos => '0',
         --
         -- OUT
         --

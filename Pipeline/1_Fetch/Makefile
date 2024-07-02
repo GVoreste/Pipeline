@@ -1,4 +1,4 @@
-SUBCOMPONENTS:= PC/PC Ram/ram
+SUBCOMPONENTS:= PC/PC Ram/ram PC/Adder_fetch
 TARGET_SUB:=$(addsuffix .o,$(notdir $(SUBCOMPONENTS)))
 SRC_FILE=Fetch
 GHDL=ghdl
