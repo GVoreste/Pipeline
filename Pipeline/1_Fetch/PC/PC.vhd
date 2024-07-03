@@ -33,38 +33,30 @@ architecture count of PC is
 	signal l_pc: std_logic_vector(63 downto 0);
 	-- signal l_new_pc: std_logic_vector(63 downto 0);
 	signal r_pc: std_logic_vector(63 downto 0):= x"FFFFFFFFFFFFFFFE";
+	signal l_operand: std_logic_vector(63 downto 0);
+	signal l_reg_stall: std_logic;
 begin
+	l_reg_stall <= i_reg_stall;
 	process(clk)
-	variable v_next_pc: std_logic_vector(63 downto 0) := (others => '0');
 	begin
 	if rising_edge(clk) then
-		--if i_reg_stall /= '1' then
+		if l_reg_stall /= '1' then
 			r_pc <= l_pc;
-		--end if;
+		end if;
 	end if;
 	end process;
 
-	process(i_nextInstr,i_PCsrc,l_pc_summed,i_reg_stall,r_pc,l_pc) is
-	begin
-	if i_reg_stall /= '1' then
-		--l_pc <= i_nextInstr when i_PCsrc = '1' else l_pc_summed;
-		if i_PCsrc = '1' then
-			l_pc <= i_nextInstr;
-		else
-			l_pc <= l_pc_summed;
-		end if;
-		--o_l_pc <= i_nextInstr when i_PCsrc = '1' else l_pc_summed;
-	else
-		l_pc <= l_pc;
-	end if;
-	end process;
+	l_pc <= l_pc_summed when i_PCsrc /= '1' else i_nextInstr;
+
 	o_l_pc <= l_pc;
 	o_pc <= r_pc;
 
+	l_operand <= PC_INCREMENT when l_reg_stall /= '1' else (others => '0');
 	Adder_instance_fetch: Adder_fetch
 	Port Map(
 		i_operand_A => r_pc,
-		i_operand_B => PC_INCREMENT,
+		--i_operand_B => PC_INCREMENT,
+		i_operand_B => l_operand,
 		i_sub => '0',
 		o_res => l_pc_summed
 	);

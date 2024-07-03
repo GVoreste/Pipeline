@@ -8,6 +8,7 @@ entity Fetch is
         i_nextInstr: in std_logic_vector(63 downto 0);
         i_PCsrc: 	 in std_logic;
         i_PCstall:   in std_logic;
+        i_flush:     in std_logic;
         i_reg_stall: in std_logic;
         o_PC:        out std_logic_vector(63 downto 0);
         o_instr:     out std_logic_vector(31 downto 0)
@@ -20,6 +21,7 @@ architecture RTL of Fetch is
     component sync_ram
         port (
             clk       : in  std_logic;
+            i_flush: in std_logic;
             i_reg_stall: in  std_logic;
             i_we      : in  std_logic;
             i_address : in  std_logic_vector;
@@ -42,6 +44,7 @@ begin
     INSTRUCTION_MEM: sync_ram
     Port Map (
         clk => clk,
+        i_flush => i_flush,
         i_reg_stall => i_reg_stall,
         i_we => '0',
         i_address => l_PC,

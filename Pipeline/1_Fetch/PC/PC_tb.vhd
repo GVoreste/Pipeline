@@ -34,6 +34,7 @@ begin
 
     STIMULUS_GEN: process is
     begin
+        --wait for 0.1 ns;
         wait for clk_T/2;
         tb_PCstall <= '0';
         tb_reg_stall <= '0';

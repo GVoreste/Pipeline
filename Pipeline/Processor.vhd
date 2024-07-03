@@ -24,6 +24,7 @@ architecture RTL of CPU is
     signal l_MemAccess_nextInstr: std_logic_vector(63 downto 0):= (others => '0');
     signal l_PCsrc: 	std_logic := '0';
     -- signal l_PCstall:   std_logic := '0';
+    signal l_Fetch_flush:   std_logic := '0';
     signal l_Fetch_reg_stall:   std_logic := '0';
     signal l_Fetch_PC:  std_logic_vector(63 downto 0):= (others => '0');
     signal l_instr:     std_logic_vector(31 downto 0):= (others => '0');
@@ -34,6 +35,7 @@ architecture RTL of CPU is
     signal l_Decode_reg_W: std_logic_vector(4 downto 0):= (others => '0');
     signal l_func7: std_logic_vector(6 downto 0):= (others => '0');
     signal l_func3: std_logic_vector(2 downto 0):= (others => '0');
+    signal l_Decode_untaken_branch: std_logic := '0';
     signal l_Decode_branch: std_logic := '0';
     signal l_Decode_fast_branch: std_logic := '0';
     signal l_Decode_mem_read: std_logic := '0';
@@ -70,7 +72,10 @@ architecture RTL of CPU is
 
     component HDU  port(
         i_branch: in std_logic;
+        i_untaken: in std_logic;
+        i_taken: in std_logic;
         o_PC_stall: out std_logic;
+        o_Fetch_flush: out std_logic;
         o_Fetch_reg_stall: out std_logic;
         o_Decode_reg_stall: out std_logic
     );
@@ -81,6 +86,7 @@ architecture RTL of CPU is
         i_nextInstr: in std_logic_vector(63 downto 0):= (others => '0');
         i_PCsrc: 	 in std_logic := '0';
         i_PCstall:   in std_logic := '0';
+        i_flush:   in std_logic := '0';
         i_reg_stall: in std_logic := '0';
         o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
         o_instr:     out std_logic_vector(31 downto 0):= (others => '0')
@@ -95,6 +101,7 @@ architecture RTL of CPU is
         i_data_to_reg: in std_logic_vector(63 downto 0):= (others => '0');
         i_reg_we:      in std_logic := '0';
         i_stall:      in std_logic := '0';
+        i_taken_branch:  in std_logic := '0';
         o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
         o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
         o_data_B:    out std_logic_vector(63 downto 0):= (others => '0');
@@ -224,11 +231,14 @@ end process;
 -- end if;
 
 -- end INIT process
-
+l_Decode_untaken_branch <= '1' when l_PCsrc = '0' and l_Decode_branch = '1' and l_Decode_fast_branch='1' else '0'; 
 HDU_inst: HDU
 Port Map(
     i_branch => l_Decode_fast_branch,
+    i_untaken => l_Decode_untaken_branch,
+    i_taken => l_PCsrc,
     o_PC_stall => open,
+    o_Fetch_flush => l_Fetch_flush,
     o_Fetch_reg_stall => l_Fetch_reg_stall,
     o_Decode_reg_stall => open
 );
@@ -240,6 +250,7 @@ Port Map(
     i_nextInstr => l_MemAccess_nextInstr,
     i_PCsrc => l_PCsrc,
     i_PCstall => '0',
+    i_flush => l_Fetch_flush,
     i_reg_stall => l_Fetch_reg_stall,
     o_PC => l_Fetch_PC,
     o_instr => l_instr
@@ -256,6 +267,7 @@ Port Map(
     i_reg_we => r_MemAccess_reg_write,
 
     i_stall => l_Fetch_reg_stall,
+    i_taken_branch => l_PCsrc,
 
     o_PC => l_Decode_PC,
     o_data_A => l_data_A,

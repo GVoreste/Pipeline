@@ -11,6 +11,7 @@ entity Decode is
         i_data_to_reg: in std_logic_vector(63 downto 0):= (others => '0');
         i_reg_we:      in std_logic := '0';
         i_stall:      in std_logic := '0';
+        i_taken_branch:  in std_logic := '0';
         o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
         o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
         o_data_B:    out std_logic_vector(63 downto 0):= (others => '0');
@@ -78,6 +79,11 @@ architecture RTL of Decode is
     signal r_regsrc:    std_logic := '0';
     signal r_ALUOp:     std_logic_vector(1 downto 0):= B"00";
 
+    signal r_stall:    std_logic := '0';
+    signal l_stall:    std_logic := '0';
+
+    signal l_taken_branch:    std_logic := '0';
+
     signal l_branch:    std_logic := '0';
     signal l_mem_read:  std_logic := '0';
     signal l_mem_write: std_logic := '0';
@@ -89,7 +95,9 @@ begin
     r_func7 <= i_instr(31 downto 25);
     r_func3 <= i_instr(14 downto 12);
     r_PC <= i_PC;
-    o_l_branch <= r_branch;
+    o_l_branch <= l_branch;
+    l_stall <= i_stall;
+    l_taken_branch <= i_taken_branch;
     process(clk) 
     begin
         if rising_edge(clk) then
@@ -101,8 +109,9 @@ begin
             o_func3 <= r_func3;
             o_imm <= r_imm;
 
-                
-            if i_stall /= '1' then
+            r_stall <= l_stall; 
+            if r_stall /= '1' and l_taken_branch/='1' then
+            --    r_stall <= l_stall;
                 r_branch <= l_branch;
                 r_mem_read <= l_mem_read;
                 r_mem_write <= l_mem_write;
@@ -112,6 +121,7 @@ begin
                 r_ALUOp <= l_ALUOp; 
                   
             else
+                --r_stall <= '0';
                 r_branch <= '0';
                 r_mem_read <= '0';
                 r_mem_write <= '0';

@@ -84,6 +84,7 @@ architecture RTL of Execute is
     signal r_bge: std_logic;
 
     signal l_imm_jump: std_logic_vector(63 downto 0);
+    signal l_imm_jump_corrected: std_logic_vector(63 downto 0);
 begin
     r_reg_W <= i_reg_W;
     r_data_MEM <= i_data_B;
@@ -140,10 +141,19 @@ begin
         o_ALUfunc => l_ALUfunc
     );
 
+    CORRECTION_ADDER: Adder
+    Port Map(
+        i_operand_A => l_imm_jump,
+        i_operand_B => (others => '1'),
+        i_sub => '0',
+        o_res => l_imm_jump_corrected
+    );
+
+
     ADDER_ADDRESS: Adder
     Port Map(
         i_operand_A => i_PC,
-        i_operand_B => l_imm_jump,
+        i_operand_B => l_imm_jump_corrected,
         i_sub => '0',
         o_res => r_nextInstr
     );

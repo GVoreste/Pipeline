@@ -17,6 +17,7 @@ entity sync_ram is
   port (
     clk       : in  std_logic;
     i_reg_stall: in  std_logic;
+    i_flush:     in std_logic;
     i_we      : in  std_logic := '0';
     i_address : in  std_logic_vector(address_size-1 downto 0):= (others => '0');
     i_data    : in  std_logic_vector(data_size-1 downto 0):= (others => '0');
@@ -100,25 +101,60 @@ architecture RTL of sync_ram is
     -- 16 => x"000" & B"11111" & B"101" & B"01010" & B"0000011", -- LD x31+0 in x10
     -- others => x"00000000"
 
+    -- 0  => x"00000000",
+    -- 1  => x"006" & B"00000" & B"111" & B"00011" & B"0010011", -- ADDI 06, x0 => x3
+    -- 2  => x"00000000",
+    -- 3  => x"00000000",
+    -- 4  => x"00000000",
+    -- 5  => x"00000000",
+    -- 6  => x"006" & B"00000" & B"111" & B"00100" & B"0010011", -- ADDI 06, x0 => x4 
+    -- 7  => x"00000000",
+    -- 8  => x"00000000",
+    -- 9  => x"00000000",
+    -- 10 => x"00000000",
+    -- --11  => B"1111111" & B"00000" & B"00100" & B"111" & B"11011" & B"1100011", -- BEQ x0,x4 go - 010
+
+    -- -- 11  => B"1111111" & B"00011" & B"00100" & B"111" & B"11111" & B"1100011", -- BEQ x3,x4 go - 010
+    -- -- 11  => B"0000000" & B"00011" & B"00100" & B"111" & B"00000" & B"1100011", -- BEQ x3,x4 go - 010
+    --  11  => B"0000000" & B"00011" & B"00100" & B"111" & B"00010" & B"1100011", -- BEQ x3,x4 go - 010
+
+    -- -- 11  => B"0000000" & B"00011" & B"00100" & B"111" & B"01010" & B"1100011", -- BEQ x3,x4 go - 010
+
+
+    -- -- 11  => B"1111111" & B"00000" & B"00100" & B"101" & B"11011" & B"1100011", -- BGE x0,x4 go - 010
+
+    -- --11  => B"1111111" & B"00100" & B"00000" & B"101" & B"11111" & B"1100011", -- BGE x4,x0 go - 010
+    -- -- 11  => B"0000000" & B"00100" & B"00000" & B"101" & B"00000" & B"1100011", -- BGE x4,x0 go - 010
+    -- -- 11  => B"0000000" & B"00100" & B"00000" & B"101" & B"00010" & B"1100011", -- BGE x4,x0 go - 010
+
+    -- 12  => x"0FF" & B"00100" & B"111" & B"11111" & B"0010011", -- ADDI FF, x4 => x31 
+    -- 13  => x"00000000",
+    -- 14  => x"00000000",
+    -- 15 =>  x"00000000",
+    -- 16  => x"0AA" & B"00000" & B"111" & B"01111" & B"0010011", -- ADDI FF, x4 => x31 
+    -- others => x"00000000"
+
+
+
     0  => x"00000000",
-    1  => x"006" & B"00000" & B"111" & B"00011" & B"0010011", -- ADDI 06, x0 => x3
-    2  => x"00000000",
+    1  => x"006" & B"00000" & B"101" & B"00001" & B"0010011", -- ADDI 06, x0 => x1
+    2  => x"006" & B"00001" & B"101" & B"00010" & B"0010011", -- ADDI 06, x1 => x2
     3  => x"00000000",
     4  => x"00000000",
     5  => x"00000000",
-    6  => x"006" & B"00000" & B"111" & B"00100" & B"0010011", -- ADDI 06, x0 => x4 
+    6  => x"006" & B"00000" & B"101" & B"00001" & B"0010011", -- ADDI 06, x0 => x1
     7  => x"00000000",
-    8  => x"00000000",
+    8  => x"006" & B"00001" & B"101" & B"00010" & B"0010011", -- ADDI 06, x1 => x2
     9  => x"00000000",
     10 => x"00000000",
-    -- 11  => B"1111111" & B"00011" & B"00100" & B"111" & B"11011" & B"1100011", -- BEQ x3,x4 go - 010
-    11  => B"0000000" & B"00011" & B"00100" & B"111" & B"00100" & B"1100011", -- BEQ x3,x4 go - 010
-    12  => x"0FF" & B"00100" & B"111" & B"00000" & B"0010011", -- ADDI FF, x4 => x0 
-    13  => x"00000000",
-    14  => x"00000000",
+    11 => x"006" & B"00000" & B"101" & B"00001" & B"0010011", -- ADDI 06, x0 => x1
+    12 => x"006" & B"00001" & B"101" & B"00001" & B"0010011", -- ADDI 06, x1 => x1
+    13 => x"006" & B"00001" & B"101" & B"00010" & B"0010011", -- ADDI 06, x1 => x2
+    14 => x"006" & B"00000" & B"101" & B"00100" & B"0010011", -- ADDI 06, x0 => x4
     15 =>  x"00000000",
     16 => x"000" & B"11111" & B"101" & B"01010" & B"0000011", -- LD x31+0 in x10
     others => x"00000000"
+
 
 
     -- 0  => x"00000000", --      nop               # START
@@ -150,33 +186,33 @@ architecture RTL of sync_ram is
 
    );
    signal read_i_address : std_logic_vector(63 downto 0):= (others => '0');
-
+   signal l_reg_stall: std_logic;
+   signal l_flush: std_logic;
+   signal l_data : std_logic_vector(31 downto 0);
 begin
+    l_flush <= i_flush;
+    l_reg_stall <= i_reg_stall;
     RamProc: process(clk) is
     begin
         if rising_edge(clk) then
-          --if i_reg_stall /= '1' then
-            --if i_we = '1' then
-            --  ram(to_integer(unsigned(read_i_address))) <= i_data;
-            --end if;
-            o_data <= ram(to_integer(unsigned(read_i_address)));
+          --if l_reg_stall /= '1' then
+          --  l_data <= ram(to_integer(unsigned(read_i_address)));
+          --elsif l_flush = '1' then
+            --l_data <= (others => '0');
           --end if;
+
+          if l_flush /= '1' then
+            l_data <= ram(to_integer(unsigned(read_i_address)));
+          else
+            l_data <= (others => '0');
+          end if;
+
+
+
         end if;
     end process RamProc;
-
-    process(i_address) is
-    begin
-      if i_reg_stall /= '1' then
-        if unsigned(i_address) > LAST_ADDR then
-          read_i_address <= std_logic_vector(LAST_ADDR);
-        else
-          read_i_address <= i_address;
-        end if;
-        --read_i_address <= std_logic_vector(LAST_ADDR) when unsigned(i_address) > LAST_ADDR else i_address;
-      else
-        read_i_address <= read_i_address;
-      end if;
-    end process;
+    o_data <= l_data; --when l_flush /= '1' else (others => '0');
+    read_i_address <= i_address when unsigned(i_address) <= LAST_ADDR else std_logic_vector(LAST_ADDR);
 
 end architecture RTL;
 

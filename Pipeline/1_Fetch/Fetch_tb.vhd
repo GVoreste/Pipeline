@@ -22,6 +22,7 @@ architecture RTL of Fetch_tb is
             i_nextInstr: in std_logic_vector(63 downto 0):= (others => '0');
             i_PCsrc: 	 in std_logic := '0';
             i_PCstall:   in std_logic := '0';
+            i_flush: in std_logic;
             i_reg_stall: in std_logic := '0';
             o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
             o_instr:     out std_logic_vector(31 downto 0):= (others => '0')
@@ -37,6 +38,7 @@ begin
 
     STIMULUS_GEN: process is
     begin
+        --wait for 0.1 ns;
         wait for clk_T/2;
 
         wait for clk_T*7;
@@ -77,6 +79,7 @@ begin
         i_nextInstr => tb_nextInstr,
         i_PCsrc => tb_PCsrc,
         i_PCstall => tb_PCstall,
+        i_flush => '0',
         i_reg_stall => tb_reg_stall,
         o_PC => o_PC,
         o_instr => o_instr
