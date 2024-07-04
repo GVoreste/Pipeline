@@ -14,11 +14,11 @@ architecture RTL of ALUcontrol_tb is
 
     component ALUControl
     port (
-        i_ALUOp:      in std_logic_vector(1 downto 0):= (others => '0');
+        i_ALU_Op:      in std_logic_vector(1 downto 0):= (others => '0');
         i_func3:      in std_logic_vector(2 downto 0):= (others => '0');
         i_func7:      in std_logic_vector(6 downto 0):= (others => '0');
         o_bge:        out std_logic := '0';
-        o_ALUfunc:    out std_logic_vector(3 downto 0):= B"0000"
+        o_ALU_func:    out std_logic_vector(3 downto 0):= B"0000"
         );
     end component;
 begin
@@ -62,10 +62,10 @@ begin
 
     ALUControl_file_to_test: ALUControl
     Port Map (
-        i_ALUOp  => tb_ALUOp,
+        i_ALU_Op  => tb_ALUOp,
         i_func3  => tb_func3,
         i_func7  => tb_func7,
         o_bge    => open,
-        o_ALUfunc => open
+        o_ALU_func => open
     );
 end architecture RTL;

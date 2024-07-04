@@ -15,13 +15,10 @@ entity sync_ram is
     data_size: Natural := 32
   );
   port (
-    clk       : in  std_logic;
-    i_reg_stall: in  std_logic;
-    i_flush:     in std_logic;
-    i_we      : in  std_logic := '0';
-    i_address : in  std_logic_vector(address_size-1 downto 0):= (others => '0');
-    i_data    : in  std_logic_vector(data_size-1 downto 0):= (others => '0');
-    o_data    : out std_logic_vector
+    clk: in std_logic;
+    i_flush: in std_logic;
+    i_address: in std_logic_vector(63 downto 0);
+    o_r_data: out std_logic_vector(31 downto 0)
   );
   constant RAM_SIZE: integer := 256;
   constant LAST_ADDR: unsigned(i_address'range) := to_unsigned(RAM_SIZE-1,i_address'length);
@@ -29,8 +26,22 @@ end entity sync_ram;
 
 architecture RTL of sync_ram is
 
-   type ram_type is array (0 to RAM_SIZE-1) of std_logic_vector(i_data'range);
+   type ram_type is array (0 to RAM_SIZE-1) of std_logic_vector(o_r_data'range);
    signal ram : ram_type := (
+    -- 0 => x"0000F000",
+    -- 1 => x"0000F001",
+    -- 2  => x"0000F002",
+    -- 3 => x"0000F003",
+    -- 4 => x"0000F004",
+    -- 5 => x"0000F005",
+    -- 6 => x"0000F006",
+    -- 7 => x"0000F007",
+    -- 8 => x"0000F008",
+    -- 9 => x"0000F009",
+    -- 10 => x"0000F00A",
+    -- others => x"00000000"
+
+
     -- 0 to 3 => x"0000F000",
     -- 4 to 7 => x"0000F004",
     -- 8 to 11 => x"0000F008",
@@ -42,7 +53,7 @@ architecture RTL of sync_ram is
     -- 32 to 35 => x"0000F020",
     -- 36 to 39 => x"0000F024",
     -- 40 to 49 => x"0000F028",
-
+    -- others => x"00000000"
 
     -- 0  => x"00000000",
     -- 1 => B"0100000" & B"00010" & B"00001" & B"000" & B"00011" & B"0110011", -- SUB x2 - x1 => x3 = D - 5 = 8
@@ -112,16 +123,17 @@ architecture RTL of sync_ram is
     -- 8  => x"00000000",
     -- 9  => x"00000000",
     -- 10 => x"00000000",
-    -- --11  => B"1111111" & B"00000" & B"00100" & B"111" & B"11011" & B"1100011", -- BEQ x0,x4 go - 010
+    -- --11  => B"1111111" & B"00000" & B"00100" & B"111" & B"11011" & B"1100011", -- NOT TAKE 
 
-    -- -- 11  => B"1111111" & B"00011" & B"00100" & B"111" & B"11111" & B"1100011", -- BEQ x3,x4 go - 010
-    -- -- 11  => B"0000000" & B"00011" & B"00100" & B"111" & B"00000" & B"1100011", -- BEQ x3,x4 go - 010
-    --  11  => B"0000000" & B"00011" & B"00100" & B"111" & B"00010" & B"1100011", -- BEQ x3,x4 go - 010
+    -- -- 11  => B"1111111" & B"00011" & B"00100" & B"111" & B"11111" & B"1100011", -- TAKE AND GO -1
+    -- -- 11  => B"0000000" & B"00011" & B"00100" & B"111" & B"00000" & B"1100011", -- TAKE AND GO  0
+    -- -- 11  => B"0000000" & B"00011" & B"00100" & B"111" & B"00010" & B"1100011", -- TAKE AND GO +1
 
-    -- -- 11  => B"0000000" & B"00011" & B"00100" & B"111" & B"01010" & B"1100011", -- BEQ x3,x4 go - 010
+    -- 11  => B"0000000" & B"00011" & B"00100" & B"111" & B"01010" & B"1100011", -- TAKE AND GO LAST
+    -- --11  => B"0000001" & B"00011" & B"00100" & B"111" & B"01010" & B"1100011", -- TAKE AND GO BEYOND
 
 
-    -- -- 11  => B"1111111" & B"00000" & B"00100" & B"101" & B"11011" & B"1100011", -- BGE x0,x4 go - 010
+    -- --11  => B"1111111" & B"00000" & B"00100" & B"101" & B"11011" & B"1100011", -- BGE x0,x4 go - 010
 
     -- --11  => B"1111111" & B"00100" & B"00000" & B"101" & B"11111" & B"1100011", -- BGE x4,x0 go - 010
     -- -- 11  => B"0000000" & B"00100" & B"00000" & B"101" & B"00000" & B"1100011", -- BGE x4,x0 go - 010
@@ -131,7 +143,7 @@ architecture RTL of sync_ram is
     -- 13  => x"00000000",
     -- 14  => x"00000000",
     -- 15 =>  x"00000000",
-    -- 16  => x"0AA" & B"00000" & B"111" & B"01111" & B"0010011", -- ADDI FF, x4 => x31 
+    -- 16  => x"0AA" & B"00000" & B"111" & B"01111" & B"0010011", -- ADDI AA, x4 => x31 
     -- others => x"00000000"
 
 
@@ -184,35 +196,117 @@ architecture RTL of sync_ram is
 
 
 
+
+
+    -- 1  => x"00000000", --      nop               # START
+
+    -- 2  => x"00000093", --      addi    x1,x0,0   # *array[0] = 0
+    -- 3  => x"00000000", --       
+    -- 4  => x"00000000", --       
+    -- 5  => x"00000000", --       
+    -- 6  => x"00000000", --       
+    -- 7  => x"00c08113", --      addi    x2,x1,12  # (i+1) = N
+    -- 8  => x"00000000", --       
+    -- 9  => x"00000000", --       
+    -- 10 => x"00000000", --       
+    -- 11 => x"00000000", --       
+    -- 12 => x"00000b63", --      beq     x0,x0,11  #             go .L2 (3+11)
+    -- 13 => x"00000000", --       
+    -- 14 => x"00000000", --       
+    -- 15 => x"00000000", --       
+    -- 16 => x"00000000", --       
+
+    -- 17 => x"00128293", -- .L3  addi    x5,x5,1   # j++
+    -- 18 => x"00000000", --       
+    -- 19 => x"00000000", --       
+    -- 20 => x"00000000", --       
+    -- 21 => x"00000000", --  
+    -- 22 => x"00228763", --      beq     x5,x2,7   # if j=(i+1)  go .L7 (5+7)
+    -- 23 => x"00000000", --       
+    -- 24 => x"00000000", --       
+    -- 25 => x"00000000", --       
+    -- 26 => x"00000000", --  
+
+    -- 27 => x"0002b183", -- .L4  ld      x3,0(x5)  # a = array[j]
+    -- 28 => x"00000000", --       
+    -- 29 => x"00000000", --       
+    -- 30 => x"00000000", --       
+    -- 31 => x"00000000", --  
+    -- 32 => x"0012b203", --      ld      x4,1(x5)  # b = array[j+1]
+    -- 33 => x"00000000", --       
+    -- 34 => x"00000000", --       
+    -- 35 => x"00000000", --       
+    -- 36 => x"00000000", --  
+    -- 37 => x"00325463", --      bge     x4,x3,4   # if b >= a   go .L3 (8-4)    L'opcode e' uguale a beq, cambia func3
+    -- 38 => x"00000000", --       
+    -- 39 => x"00000000", --       
+    -- 40 => x"00000000", --       
+    -- 41 => x"00000000", --  
+    -- 42 => x"0042b023", --      sd      x4,0(x5)  # array[j]   = b
+    -- 43 => x"00000000", --       
+    -- 44 => x"00000000", --       
+    -- 45 => x"00000000", --       
+    -- 46 => x"00000000", --  
+    -- 47 => x"0032b0a3", --      sd      x3,1(x5)  # array[j+1] = a
+    -- 48 => x"00000000", --       
+    -- 49 => x"00000000", --       
+    -- 50 => x"00000000", --       
+    -- 51 => x"00000000", --  
+    -- 52 => x"fe0009e3", --      beq     x0,x0,-7  #             go .L3 (11-7)
+    -- 53 => x"00000000", --       
+    -- 54 => x"00000000", --       
+    -- 55 => x"00000000", --       
+    -- 56 => x"00000000", --  
+
+    -- 57 => x"fff10113", -- .L7  addi    x2,x2,-1  # (i+1)--
+    -- 58 => x"00000000", --       
+    -- 59 => x"00000000", --       
+    -- 60 => x"00000000", --       
+    -- 61 => x"00000000", --  
+    -- 62 => x"00110363", --      beq     x2,x1,3   # if (i+1)=0  go .L5 (13+3)
+    -- 63 => x"00000000", --       
+    -- 64 => x"00000000", --       
+    -- 65 => x"00000000", --       
+    -- 66 => x"00000000", --  
+
+    -- 67 => x"00008293", -- .L2  addi    x5,x1,0   # j = 0
+    -- 68 => x"00000000", --       
+    -- 69 => x"00000000", --       
+    -- 70 => x"00000000", --       
+    -- 71 => x"00000000", --  
+    -- 72 => x"fe0007e3", --      beq     x0,x0,-9  #             go .L4 (15-9)
+    -- 73 => x"00000000", --       
+    -- 74 => x"00000000", --       
+    -- 75 => x"00000000", --       
+    -- 76 => x"00000000", --  
+
+    -- 77 => x"00000063"  -- .L5  beq     x0,x0,0   # STOP
+    -- others => x"00000000"
+
+
+
+
+
+
+
    );
-   signal read_i_address : std_logic_vector(63 downto 0):= (others => '0');
-   signal l_reg_stall: std_logic;
+   signal l_address : std_logic_vector(63 downto 0):= (others => '0');
    signal l_flush: std_logic;
-   signal l_data : std_logic_vector(31 downto 0);
+   signal r_data : std_logic_vector(31 downto 0);
 begin
     l_flush <= i_flush;
-    l_reg_stall <= i_reg_stall;
     RamProc: process(clk) is
     begin
         if rising_edge(clk) then
-          --if l_reg_stall /= '1' then
-          --  l_data <= ram(to_integer(unsigned(read_i_address)));
-          --elsif l_flush = '1' then
-            --l_data <= (others => '0');
-          --end if;
-
           if l_flush /= '1' then
-            l_data <= ram(to_integer(unsigned(read_i_address)));
+            r_data <= ram(to_integer(unsigned(l_address)));
           else
-            l_data <= (others => '0');
+            r_data <= (others => '0');
           end if;
-
-
-
         end if;
     end process RamProc;
-    o_data <= l_data; --when l_flush /= '1' else (others => '0');
-    read_i_address <= i_address when unsigned(i_address) <= LAST_ADDR else std_logic_vector(LAST_ADDR);
+    o_r_data <= r_data;
+    l_address <= i_address when unsigned(i_address) <= LAST_ADDR else std_logic_vector(LAST_ADDR);
 
 end architecture RTL;
 

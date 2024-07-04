@@ -40,7 +40,7 @@ architecture RTL of ALU_tb is
         port ( 
             i_operand_A: in std_logic_vector(63 downto 0):= (others => '0');
             i_operand_B: in std_logic_vector(63 downto 0):= (others => '0');
-            i_ALUfunc:   in std_logic_vector( 3 downto 0):= (others => '0');
+            i_ALU_func:   in std_logic_vector( 3 downto 0):= (others => '0');
             o_Zero:      out std_logic := '0';
             o_Pos:       out std_logic := '0';
             o_ALUres:    out std_logic_vector(63 downto 0):=(others => '0')
@@ -73,7 +73,7 @@ begin
     Port Map (
         i_operand_A => tb_operand_A,
         i_operand_B => tb_operand_B,
-        i_ALUfunc => tb_ALUfunc,
+        i_ALU_func => tb_ALUfunc,
         o_Zero => open,
         o_Pos => open,
         o_ALUres => open

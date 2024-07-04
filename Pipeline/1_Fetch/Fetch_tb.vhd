@@ -8,25 +8,22 @@ end entity Fetch_tb;
 
 architecture RTL of Fetch_tb is
     signal tb_clk : std_logic := '0';
-    signal tb_nextInstr: std_logic_vector(63 downto 0) := (others => '0');
-    signal tb_PCsrc: std_logic := '0';
-    signal tb_PCstall: std_logic := '0';
-    signal tb_reg_stall: std_logic := '0';
-    signal o_PC: std_logic_vector(63 downto 0);
-    signal o_instr: std_logic_vector(31 downto 0):= (others => '0');
+    signal tb_next_instr: std_logic_vector(63 downto 0) := (others => '0');
+    signal tb_branch_taken: std_logic := '0';
+    signal tb_stall: std_logic := '0';
+    signal tb_flush: std_logic := '0';
     constant clk_T : time := 10 ns;
 
     component Fetch
     port  ( 
-            clk:         in std_logic;
-            i_nextInstr: in std_logic_vector(63 downto 0):= (others => '0');
-            i_PCsrc: 	 in std_logic := '0';
-            i_PCstall:   in std_logic := '0';
-            i_flush: in std_logic;
-            i_reg_stall: in std_logic := '0';
-            o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
-            o_instr:     out std_logic_vector(31 downto 0):= (others => '0')
-          );
+        clk: in std_logic;
+        i_flush: in std_logic;
+        i_stall: in std_logic;
+        i_branch_taken: in std_logic;
+        i_next_instr: in std_logic_vector(63 downto 0);
+        o_r_pc: out std_logic_vector(63 downto 0);
+        o_r_instr: out std_logic_vector(31 downto 0)
+    );
     end component Fetch;
 
 begin
@@ -38,37 +35,36 @@ begin
 
     STIMULUS_GEN: process is
     begin
-        --wait for 0.1 ns;
         wait for clk_T/2;
 
         wait for clk_T*7;
 
-        tb_reg_stall <= '1';
+        tb_stall <= '1';
         wait for clk_T;
-        tb_reg_stall <= '0';
+        tb_stall <= '0';
 
         wait for clk_T*5;
 
-        tb_nextInstr <= std_logic_vector(to_unsigned(0,64));
+        tb_next_instr <= std_logic_vector(to_unsigned(0,64));
         wait for clk_T;
-        tb_PCsrc <= '1';
+        tb_branch_taken <= '1';
         wait for clk_T*5;
-        tb_nextInstr <= std_logic_vector(to_unsigned(50,64));
+        tb_next_instr <= std_logic_vector(to_unsigned(50,64));
         wait for clk_T*5;
-        tb_PCsrc <= '0';
+        tb_branch_taken <= '0';
 
         wait for clk_T*5;
 
-        tb_PCsrc <= '1';
-        tb_nextInstr <= std_logic_vector(to_unsigned(0,64));
+        tb_branch_taken <= '1';
+        tb_next_instr <= std_logic_vector(to_unsigned(0,64));
         wait for clk_T;
-        tb_PCsrc <= '0';
+        tb_branch_taken <= '0';
 
         wait for clk_T*9;
 
-        tb_PCstall <= '1';
+        tb_flush <= '1';
         wait for clk_T;
-        tb_PCstall <= '0';
+        tb_flush <= '0';
 
         wait for clk_T;
     end process STIMULUS_GEN;
@@ -76,13 +72,12 @@ begin
     Fetch_to_test: Fetch
     Port Map (
         clk => tb_clk,
-        i_nextInstr => tb_nextInstr,
-        i_PCsrc => tb_PCsrc,
-        i_PCstall => tb_PCstall,
-        i_flush => '0',
-        i_reg_stall => tb_reg_stall,
-        o_PC => o_PC,
-        o_instr => o_instr
+        i_flush => tb_flush,
+        i_stall => tb_stall,
+        i_branch_taken => tb_branch_taken,
+        i_next_instr => tb_next_instr,
+        o_r_pc => open,
+        o_r_instr => open
     );
 
 end architecture RTL;

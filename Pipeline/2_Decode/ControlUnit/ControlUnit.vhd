@@ -4,70 +4,87 @@ use IEEE.numeric_std.all;
 
 entity ControllUnit is
 port (
-       i_opcode:     in std_logic_vector(6 downto 0):= (others => '0');
-	   o_branch:     out std_logic := '0';
-       o_mem_read:   out std_logic := '0';
-       o_mem_write:  out std_logic := '0';
-       o_reg_write:  out std_logic := '0';
-       o_ALUsrc:     out std_logic := '0';
-       o_regsrc:     out std_logic := '0';
-       o_ALUOp:      out std_logic_vector(1 downto 0):= B"00"
+       i_opcode:     in std_logic_vector(6 downto 0);
+	   o_branch:     out std_logic;
+       o_mem_rd:   out std_logic;
+       o_mem_we:  out std_logic;
+       o_reg_we:  out std_logic;
+       o_alu_src_imm:     out std_logic;
+       o_reg_src_mem:     out std_logic;
+       o_alu_op:      out std_logic_vector(1 downto 0)
        );
 end ControllUnit;
 
-architecture RTL of ControllUnit is
+architecture RTL of ControllUnit is 
+    signal l_opcode:  std_logic_vector(6 downto 0);
+
+    signal l_branch   : std_logic;
+    signal l_mem_rd : std_logic;
+    signal l_mem_we: std_logic;
+    signal l_reg_we: std_logic;
+    signal l_alu_src_imm   : std_logic;
+    signal l_reg_src_mem   : std_logic;
+    signal l_alu_op    : std_logic_vector(1 downto 0);
 begin
-    process(i_opcode) is
+    l_opcode <= i_opcode;
+    process(l_opcode) is
     begin
-        case i_opcode is
+        case l_opcode is
             when B"0110011" =>           -- R-format
-                o_branch    <= '0';
-                o_mem_read  <= '0';
-                o_mem_write <= '0';
-                o_reg_write <= '1';
-                o_ALUsrc    <= '0';
-                o_regsrc    <= '0';
-                o_ALUOp     <= B"10";
+                l_branch  <= '0';
+                l_mem_rd  <= '0';
+                l_mem_we <= '0';
+                l_reg_we <= '1';
+                l_alu_src_imm    <= '0';
+                l_reg_src_mem    <= '0';
+                l_alu_op     <= B"10";
             when B"0100011" =>           -- SD
-                o_branch    <= '0';
-                o_mem_read  <= '0';
-                o_mem_write <= '1';
-                o_reg_write <= '0';
-                o_ALUsrc    <= '1';
-                o_regsrc    <= '-';
-                o_ALUOp     <= B"00";
+                l_branch    <= '0';
+                l_mem_rd  <= '0';
+                l_mem_we <= '1';
+                l_reg_we <= '0';
+                l_alu_src_imm    <= '1';
+                l_reg_src_mem    <= '-';
+                l_alu_op     <= B"00";
             when B"0000011" =>           -- LD
-                o_branch    <= '0';
-                o_mem_read  <= '1';
-                o_mem_write <= '0';
-                o_reg_write <= '1';
-                o_ALUsrc    <= '1';
-                o_regsrc    <= '1';
-                o_ALUOp     <= B"00";
+                l_branch    <= '0';
+                l_mem_rd  <= '1';
+                l_mem_we <= '0';
+                l_reg_we <= '1';
+                l_alu_src_imm    <= '1';
+                l_reg_src_mem    <= '1';
+                l_alu_op     <= B"00";
             when B"1100011" =>           -- BEQ BGE
-                o_branch    <= '1';
-                o_mem_read  <= '0';
-                o_mem_write <= '0';
-                o_reg_write <= '0';
-                o_ALUsrc    <= '0';
-                o_regsrc    <= '-';
-                o_ALUOp     <= B"01";
+                l_branch    <= '1';
+                l_mem_rd  <= '0';
+                l_mem_we <= '0';
+                l_reg_we <= '0';
+                l_alu_src_imm    <= '0';
+                l_reg_src_mem    <= '-';
+                l_alu_op     <= B"01";
             when B"0010011" =>           -- ADDI   (TO TEST)
-                o_branch    <= '0';
-                o_mem_read  <= '0';
-                o_mem_write <= '0';
-                o_reg_write <= '1';
-                o_ALUsrc    <= '1';
-                o_regsrc    <= '0';
-                o_ALUOp     <= B"00";
+                l_branch    <= '0';
+                l_mem_rd  <= '0';
+                l_mem_we <= '0';
+                l_reg_we <= '1';
+                l_alu_src_imm    <= '1';
+                l_reg_src_mem    <= '0';
+                l_alu_op     <= B"00";
             when others =>               -- NOP and unknown
-                o_branch    <= '0';
-                o_mem_read  <= '0';
-                o_mem_write <= '0';
-                o_reg_write <= '0';
-                o_ALUsrc    <= '0';
-                o_regsrc    <= '0';
-                o_ALUOp     <= B"00";
+                l_branch    <= '0';
+                l_mem_rd  <= '0';
+                l_mem_we <= '0';
+                l_reg_we <= '0';
+                l_alu_src_imm <= '0';
+                l_reg_src_mem <= '0';
+                l_alu_op <= B"00";
         end case;
     end process;
+    o_branch    <= l_branch;
+    o_mem_rd  <= l_mem_rd;
+    o_mem_we <= l_mem_we;
+    o_reg_we <= l_reg_we;
+    o_alu_src_imm    <= l_alu_src_imm;
+    o_reg_src_mem <= l_reg_src_mem;
+    o_alu_op <= l_alu_op;
 end architecture;

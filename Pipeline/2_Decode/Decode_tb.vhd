@@ -86,27 +86,30 @@ architecture RTL of Decode_tb is
     port ( 
         clk:         in std_logic;
         i_instr:     in std_logic_vector(31 downto 0):= (others => '0');
-        i_PC: 	     in std_logic_vector(63 downto 0):= (others => '0');
-        i_reg_to_write: in std_logic_vector(4 downto 0):= (others => '0');
-        i_data_to_reg: in std_logic_vector(63 downto 0):= (others => '0');
+        i_pc: 	     in std_logic_vector(63 downto 0):= (others => '0');
+        i_w_reg: in std_logic_vector(4 downto 0):= (others => '0');
+        i_data_reg: in std_logic_vector(63 downto 0):= (others => '0');
         i_reg_we:      in std_logic := '0';
-        i_stall:      in std_logic := '0';
-        o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
-        o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
-        o_data_B:    out std_logic_vector(63 downto 0):= (others => '0');
-        o_imm:       out std_logic_vector(63 downto 0):= (others => '0');
-        o_reg_W:     out std_logic_vector(4 downto 0):= (others => '0');
-        o_func7:     out std_logic_vector(6 downto 0):= (others => '0');
-        o_func3:     out std_logic_vector(2 downto 0):= (others => '0');
+        i_stall: in std_logic := '0';
+        o_r_pc:        out std_logic_vector(63 downto 0):= (others => '0');
+        o_r_data_a:    out std_logic_vector(63 downto 0):= (others => '0');
+        o_r_data_b:    out std_logic_vector(63 downto 0):= (others => '0');
+        o_r_imm:       out std_logic_vector(63 downto 0):= (others => '0');
+        o_r_reg_w:     out std_logic_vector(4 downto 0):= (others => '0');
+        o_r_func7:     out std_logic_vector(6 downto 0):= (others => '0');
+        o_r_func3:     out std_logic_vector(2 downto 0):= (others => '0');
+        o_l_reg_a:     out std_logic_vector(4 downto 0);
+        o_l_reg_b:     out std_logic_vector(4 downto 0);        
         -- Controll signal
         o_l_branch:     out std_logic := '0';
-        o_branch:     out std_logic := '0';
-        o_mem_read:   out std_logic := '0';
-        o_mem_write:  out std_logic := '0';
-        o_reg_write:  out std_logic := '0';
-        o_ALUsrc:     out std_logic := '0';
-        o_regsrc:     out std_logic := '0';
-        o_ALUOp:      out std_logic_vector(1 downto 0):= B"00"
+        o_r_branch:     out std_logic := '0';
+        o_r_mem_rd:   out std_logic := '0';
+        o_r_mem_we:  out std_logic := '0';
+        o_r_reg_we:  out std_logic := '0';
+        o_l_alu_src_imm: out std_logic := '0';
+        o_r_alu_src_imm: out std_logic := '0';
+        o_r_reg_src_mem: out std_logic := '0';
+        o_r_alu_op: out std_logic_vector(1 downto 0):= B"00"
     );
     end component;
 begin
@@ -132,26 +135,29 @@ begin
     Port Map (
         clk => tb_clk,       
         i_instr => tb_instr,
-        i_PC => tb_PC,
-        i_reg_to_write => (others => '0'),
-        i_data_to_reg => (others => '0'),
+        i_pc => tb_PC,
+        i_w_reg => (others => '0'),
+        i_data_reg => (others => '0'),
         i_reg_we => '0',
         i_stall  => '0',
-        o_PC => open,
-        o_data_A => open,
-        o_data_B => open, 
-        o_imm => open,    
-        o_reg_W => open,  
-        o_func7 => open,   
-        o_func3 => open,    
+        o_r_pc => open,
+        o_r_data_a => open,
+        o_r_data_b => open, 
+        o_r_imm => open,    
+        o_r_reg_w => open,  
+        o_r_func7 => open,   
+        o_r_func3 => open,   
+        o_l_reg_a => open,
+        o_l_reg_b => open,
         -- Controll signal
         o_l_branch => open, 
-        o_branch => open,   
-        o_mem_read => open,  
-        o_mem_write => open, 
-        o_reg_write => open, 
-        o_ALUsrc => open,    
-        o_regsrc => open,    
-        o_ALUOp => open
+        o_r_branch => open,   
+        o_r_mem_rd => open,  
+        o_r_mem_we => open, 
+        o_r_reg_we => open, 
+        o_l_alu_src_imm => open, 
+        o_r_alu_src_imm => open,    
+        o_r_reg_src_mem => open,    
+        o_r_alu_op => open
     );
 end architecture RTL;

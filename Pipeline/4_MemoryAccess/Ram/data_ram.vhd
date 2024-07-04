@@ -15,16 +15,16 @@ entity sync_data_ram is
     i_we      : in  std_logic := '0';
     i_re      : in  std_logic := '0';
     i_address : in  std_logic_vector(63 downto 0):= (others => '0');
-    i_data    : in  std_logic_vector(63 downto 0):= (others => '0');
-    o_data    : out std_logic_vector
+    i_data_mem    : in  std_logic_vector(63 downto 0):= (others => '0');
+    o_r_data    : out std_logic_vector
   );
   constant RAM_SIZE: integer := 256;
-  constant LAST_ADDR: unsigned(i_data'range) := to_unsigned(RAM_SIZE-1,i_data'length);
+  constant LAST_ADDR: unsigned(i_data_mem'range) := to_unsigned(RAM_SIZE-1,i_data_mem'length);
 end entity sync_data_ram;
 
 architecture RTL of sync_data_ram is
 
-   type ram_type is array (0 to RAM_SIZE-1) of std_logic_vector(i_data'range);
+   type ram_type is array (0 to RAM_SIZE-1) of std_logic_vector(i_data_mem'range);
    signal ram : ram_type := (
     -- 0 to 3 => x"000000000000F000",
     -- 4 to 7 => x"000000000000F004",
@@ -65,10 +65,10 @@ begin
             end if;
             
             if i_we = '1' then
-              ram(to_integer(unsigned(address))) <= i_data;
+              ram(to_integer(unsigned(address))) <= i_data_mem;
             end if;
             if i_re = '1' then
-              o_data <= ram(to_integer(unsigned(address)));
+              o_r_data <= ram(to_integer(unsigned(address)));
             end if;
         end if;
     end process RamProc;

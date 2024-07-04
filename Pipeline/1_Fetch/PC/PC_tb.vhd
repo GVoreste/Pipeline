@@ -8,20 +8,19 @@ end entity pc_tb;
 
 architecture RTL of pc_tb is
     signal tb_clk : std_logic := '0';
-    signal tb_nextInstr: std_logic_vector(63 downto 0) ;
-    signal tb_PCsrc: std_logic;
-    signal tb_PCstall: std_logic;
-    signal tb_reg_stall: std_logic;
+    signal tb_next_instr: std_logic_vector(63 downto 0) ;
+    signal tb_branch_taken: std_logic;
+    signal tb_stall: std_logic;
     constant clk_T : time := 10 ns;
 
     component PC
-    port  ( clk:         in std_logic;
-            i_reg_stall: 	 in std_logic;
-            i_nextInstr: in std_logic_vector(63 downto 0);
-            i_PCsrc: 	 in std_logic;
-            i_PCstall:   in std_logic;
-            o_pc:        out std_logic_vector(63 downto 0);
-            o_l_pc:        out std_logic_vector(63 downto 0)
+    port  ( 
+            clk: in std_logic;
+            i_stall: in std_logic;
+            i_next_instr: in std_logic_vector(63 downto 0);
+            i_branch_taken: in std_logic;
+            o_r_pc: out std_logic_vector(63 downto 0);
+            o_l_pc: out std_logic_vector(63 downto 0)
           );
     end component PC;
 
@@ -34,101 +33,52 @@ begin
 
     STIMULUS_GEN: process is
     begin
-        --wait for 0.1 ns;
+
         wait for clk_T/2;
-        tb_PCstall <= '0';
-        tb_reg_stall <= '0';
-        tb_PCsrc <= '0';
+        tb_stall <= '0';
+        tb_branch_taken <= '0';
 
         wait for clk_T*3;
 
-        tb_PCstall <= '1';
-        wait for clk_T*3;
-        tb_PCstall <= '0';
+        tb_stall <= '1';
+        wait for clk_T;
+        tb_stall <= '0';
 
         wait for clk_T*3;
 
-        tb_reg_stall <= '1';
-        wait for clk_T*3;
-        tb_reg_stall <= '0';
-
-        wait for clk_T*3;
-
-        tb_PCsrc <= '1';
-        tb_nextInstr <= x"00ff00aa00f00a00";
+        tb_branch_taken <= '1';
+        tb_next_instr <= x"00ff00aa00f00a00";
         wait for clk_T*2;
-        tb_PCsrc <= '0';
+        tb_branch_taken <= '0';
 
         wait for clk_T*10;
 
-        tb_PCsrc <= '1';
-        tb_nextInstr <= x"00000000000000A0";
+        tb_branch_taken <= '1';
+        tb_next_instr <= x"00000000000000A0";
         wait for clk_T;
-        tb_PCsrc <= '0';
+        tb_branch_taken <= '0';
 
         wait for clk_T*4;
 
-        tb_PCstall <= '1';
+        tb_branch_taken <= '1';
+        tb_next_instr <= x"00000000000000A0";
         wait for clk_T;
-        tb_PCstall <= '0';
-
-
-        wait for clk_T*4;
-
-        tb_reg_stall <= '1';
-        wait for clk_T;
-        tb_reg_stall <= '0';
-
-        wait for clk_T*4;
-
-        tb_PCstall <= '1';
-        wait for clk_T;
-        tb_reg_stall <= '1';
-        tb_PCstall <= '0';
-        wait for clk_T;
-        tb_reg_stall <= '0';
-
-        wait for clk_T*4;
-
-        tb_reg_stall <= '1';
-        wait for clk_T;
-        tb_reg_stall <= '0';
-        tb_PCstall <= '1';
-        wait for clk_T;
-        tb_PCstall <= '0';
-
-        wait for clk_T*4;
-
-        tb_reg_stall <= '1';
-        tb_PCstall <= '1';
-        wait for clk_T;
-        tb_reg_stall <= '0';
-        tb_PCstall <= '0';
-
-        wait for clk_T*4;
-
-        tb_PCsrc <= '1';
-        tb_PCstall <= '1';
-        tb_nextInstr <= x"00000000000000A0";
-        wait for clk_T;
-        tb_PCstall <= '0';
-        tb_PCsrc <= '0';
+        tb_branch_taken <= '0';
 
         wait for clk_T*10;
 
-        tb_PCsrc <= '1';
-        tb_nextInstr <= (others => '0');
+        tb_branch_taken <= '1';
+        tb_next_instr <= (others => '0');
         wait for clk_T*100;
     end process STIMULUS_GEN;
 
     pc_to_test: pc
     Port Map (
         clk => tb_clk,
-        i_reg_stall => tb_reg_stall,
-        i_nextInstr => tb_nextInstr,
-        i_PCsrc => tb_PCsrc,
-        i_PCstall => tb_PCstall,
-        o_pc => open,
+        i_stall => tb_stall,
+        i_next_instr => tb_next_instr,
+        i_branch_taken => tb_branch_taken,
+        o_r_pc => open,
         o_l_pc => open
     );
 

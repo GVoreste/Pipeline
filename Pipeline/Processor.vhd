@@ -5,353 +5,314 @@ use IEEE.Numeric_Std.all;
 
 entity CPU is
     port(
-        clk: in std_logic := '0';
-        power_on: in std_logic :='0';
-        i_we: in std_logic :='0';
-        i_re: in std_logic :='0';
-        i_data: in std_logic_vector(63 downto 0);
-        i_instr: in std_logic_vector(31 downto 0);
-        i_data_pos: in std_logic_vector(63 downto 0);
-        i_instr_pos: in std_logic_vector(63 downto 0);
-        o_sel_instr: out std_logic_vector(63 downto 0);
-        o_sel_data: out std_logic_vector(63 downto 0);
-        o_read_instr: out std_logic_vector(31 downto 0);
-        o_read_data: out std_logic_vector(63 downto 0)
+        clk: in std_logic := '0'
     );
 end entity;
 
 architecture RTL of CPU is
-    signal l_MemAccess_nextInstr: std_logic_vector(63 downto 0):= (others => '0');
-    signal l_PCsrc: 	std_logic := '0';
-    -- signal l_PCstall:   std_logic := '0';
-    signal l_Fetch_flush:   std_logic := '0';
-    signal l_Fetch_reg_stall:   std_logic := '0';
-    signal l_Fetch_PC:  std_logic_vector(63 downto 0):= (others => '0');
-    signal l_instr:     std_logic_vector(31 downto 0):= (others => '0');
-    signal l_Decode_PC: std_logic_vector(63 downto 0):= (others => '0');
-    signal l_data_A:  std_logic_vector(63 downto 0):= (others => '0');
-    signal l_data_B:  std_logic_vector(63 downto 0):= (others => '0');
-    signal l_imm:     std_logic_vector(63 downto 0):= (others => '0');
-    signal l_Decode_reg_W: std_logic_vector(4 downto 0):= (others => '0');
-    signal l_func7: std_logic_vector(6 downto 0):= (others => '0');
-    signal l_func3: std_logic_vector(2 downto 0):= (others => '0');
-    signal l_Decode_untaken_branch: std_logic := '0';
-    signal l_Decode_branch: std_logic := '0';
-    signal l_Decode_fast_branch: std_logic := '0';
-    signal l_Decode_mem_read: std_logic := '0';
-    signal l_Decode_mem_write: std_logic := '0';
-    signal l_Decode_reg_write: std_logic := '0';
-    signal l_ALUsrc: std_logic := '0';
-    signal l_Decode_regsrc: std_logic := '0';
-    signal l_ALUOp: std_logic_vector(1 downto 0):= B"00";
-    signal l_Execute_nextInstr: std_logic_vector(63 downto 0):= (others => '0');
-    signal l_Execute_ALUres: std_logic_vector(63 downto 0):= (others => '0');
-    signal l_Execute_reg_W: std_logic_vector(4 downto 0):= (others => '0');
-    signal l_data_MEM: std_logic_vector(63 downto 0):= (others => '0');
-    signal l_Execute_bge: std_logic := '0';
-    signal l_Execute_branch: std_logic := '0';
-    signal l_Execute_mem_read: std_logic := '0';
-    signal l_Execute_mem_write: std_logic := '0';
-    signal l_Execute_reg_write: std_logic := '0';
-    signal l_Execute_regsrc: std_logic := '0';
-    signal l_Execute_Pos: std_logic := '0';
-    signal l_Execute_Zero: std_logic := '0';
+
+    signal l_HDU_Fetch_stall:  std_logic;
+    signal l_HDU_Fetch_flush:  std_logic;
+    signal r_Fetch_pc:  std_logic_vector(63 downto 0);
+    signal r_Fetch_instr:     std_logic_vector(31 downto 0);
+
+    signal l_HDU_Decode_stall:  std_logic;
+    signal r_Decode_pc: std_logic_vector(63 downto 0);
+    signal r_Decode_data_a:  std_logic_vector(63 downto 0);
+    signal r_Decode_data_b:  std_logic_vector(63 downto 0);
+    signal r_Decode_imm:     std_logic_vector(63 downto 0);
+  
+    signal r_Decode_reg_w: std_logic_vector(4 downto 0);
+    signal r_Decode_func7: std_logic_vector(6 downto 0);
+    signal r_Decode_func3: std_logic_vector(2 downto 0);
+    signal l_Decode_reg_A: std_logic_vector(4 downto 0);
+    signal l_Decode_reg_B: std_logic_vector(4 downto 0);
+
+    signal l_Decode_branch: std_logic;
+    signal r_Decode_branch: std_logic;
+    signal r_Decode_mem_rd: std_logic;
+    signal r_Decode_mem_we: std_logic;
+ 
+    signal r_Decode_reg_we: std_logic;
+
+    signal l_Decode_ALU_src_imm: std_logic;
+    signal r_Decode_ALU_src_imm: std_logic;
+
+    signal r_Decode_reg_src_mem: std_logic;
+    signal r_Decode_alu_op: std_logic_vector(1 downto 0):= B"00";
+
+
+
+    signal l_Execute_next_instr: std_logic_vector(63 downto 0);
+    signal r_Execute_alu_res: std_logic_vector(63 downto 0);
+    signal r_Execute_data_mem: std_logic_vector(63 downto 0);
+    signal l_Execute_reg_w: std_logic_vector(4 downto 0);
+    signal r_Execute_reg_w: std_logic_vector(4 downto 0);
+
+    signal r_Execute_mem_rd: std_logic;
+    signal r_Execute_mem_we: std_logic;
+    signal l_Execute_reg_we: std_logic;
+    signal r_Execute_reg_we: std_logic;
+    signal r_Execute_reg_src_mem: std_logic;
+
+    signal l_Execute_branch: std_logic;
+    signal l_Execute_branch_taken: std_logic;
+   
+
+    
     --
-    signal r_mem_data: std_logic_vector(63 downto 0):= (others => '0');
-    signal r_MemAccess_ALUres: std_logic_vector(63 downto 0):= (others => '0');
-    signal r_MemAccess_reg_W: std_logic_vector(4 downto 0):= (others => '0');
-    signal r_MemAccess_regsrc: std_logic := '0';
-    signal r_MemAccess_reg_write: std_logic := '0';
-    signal r_data_to_reg: std_logic_vector(63 downto 0);
+    signal r_MemAccess_mem_data: std_logic_vector(63 downto 0);
+    signal r_MemAccess_alu_res: std_logic_vector(63 downto 0);
+    signal r_MemAccess_reg_w: std_logic_vector(4 downto 0);
+    
+    signal r_MemAccess_reg_src_mem: std_logic := '0';
+    signal r_MemAccess_reg_we: std_logic := '0';
     --
-    signal l_mem_data: std_logic_vector(63 downto 0):= (others => '0');
-    signal l_MemAccess_ALUres: std_logic_vector(63 downto 0):= (others => '0');
-    signal l_MemAccess_reg_W: std_logic_vector(4 downto 0):= (others => '0');
-    signal l_MemAccess_regsrc: std_logic := '0';
-    signal l_MemAccess_reg_write: std_logic := '0';
+    signal l_WriteBack_data_reg: std_logic_vector(63 downto 0);
 
     component HDU  port(
+        clk: in std_logic;
         i_branch: in std_logic;
-        i_untaken: in std_logic;
-        i_taken: in std_logic;
-        o_PC_stall: out std_logic;
+        i_branch_taken: in std_logic;
+        i_reg_A: in std_logic_vector(4 downto 0);
+        i_reg_B: in std_logic_vector(4 downto 0);
+        i_alu_src_imm: in std_logic;
+        i_Execute_reg_w: in std_logic_vector(4 downto 0);
+        i_Execute_reg_we: in std_logic;
+        i_MemAccess_reg_w: in std_logic_vector(4 downto 0);
+        i_MemAccess_reg_we: in std_logic;
+        o_Fetch_stall: out std_logic;
         o_Fetch_flush: out std_logic;
-        o_Fetch_reg_stall: out std_logic;
-        o_Decode_reg_stall: out std_logic
+        o_Decode_stall: out std_logic
     );
     end component;
 
     component Fetch port(
-        clk:         in std_logic;
-        i_nextInstr: in std_logic_vector(63 downto 0):= (others => '0');
-        i_PCsrc: 	 in std_logic := '0';
-        i_PCstall:   in std_logic := '0';
-        i_flush:   in std_logic := '0';
-        i_reg_stall: in std_logic := '0';
-        o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
-        o_instr:     out std_logic_vector(31 downto 0):= (others => '0')
+        clk: in std_logic;
+        i_flush: in std_logic;
+        i_stall: in std_logic;
+        i_branch_taken: in std_logic;
+        i_next_instr: in std_logic_vector(63 downto 0);
+        o_r_pc: out std_logic_vector(63 downto 0);
+        o_r_instr: out std_logic_vector(31 downto 0)
     );
     end component;
 
     component Decode port(
-        clk:         in std_logic;
-        i_instr:     in std_logic_vector(31 downto 0):= (others => '0');
-        i_PC: 	     in std_logic_vector(63 downto 0):= (others => '0');
-        i_reg_to_write: in std_logic_vector(4 downto 0):= (others => '0');
-        i_data_to_reg: in std_logic_vector(63 downto 0):= (others => '0');
-        i_reg_we:      in std_logic := '0';
-        i_stall:      in std_logic := '0';
-        i_taken_branch:  in std_logic := '0';
-        o_PC:        out std_logic_vector(63 downto 0):= (others => '0');
-        o_data_A:    out std_logic_vector(63 downto 0):= (others => '0');
-        o_data_B:    out std_logic_vector(63 downto 0):= (others => '0');
-        o_imm:       out std_logic_vector(63 downto 0):= (others => '0');
-        o_reg_W:     out std_logic_vector(4 downto 0):= (others => '0');
-        o_func7:     out std_logic_vector(6 downto 0):= (others => '0');
-        o_func3:     out std_logic_vector(2 downto 0):= (others => '0');
+        clk:           in std_logic;
+        i_instr:       in std_logic_vector(31 downto 0);
+        i_pc: 	       in std_logic_vector(63 downto 0);
+        i_w_reg: in std_logic_vector(4 downto 0);
+        i_data_reg: in std_logic_vector(63 downto 0);
+        i_reg_we:      in std_logic;
+        i_stall:      in std_logic;
+        --i_taken_branch:  in std_logic;
+        --
+        -- OUT
+        --
+        o_r_pc:        out std_logic_vector(63 downto 0);
+        o_r_data_a:    out std_logic_vector(63 downto 0);
+        o_r_data_b:    out std_logic_vector(63 downto 0);
+        o_r_imm:       out std_logic_vector(63 downto 0);
+        o_r_reg_w:     out std_logic_vector(4 downto 0);
+        o_r_func7:     out std_logic_vector(6 downto 0);
+        o_r_func3:     out std_logic_vector(2 downto 0);
+        o_l_reg_a:     out std_logic_vector(4 downto 0);
+        o_l_reg_b:     out std_logic_vector(4 downto 0);
         -- Controll signal
-        o_l_branch:     out std_logic := '0';
-        o_branch:     out std_logic := '0';
-        o_mem_read:   out std_logic := '0';
-        o_mem_write:  out std_logic := '0';
-        o_reg_write:  out std_logic := '0';
-        o_ALUsrc:     out std_logic := '0';
-        o_regsrc:     out std_logic := '0';
-        o_ALUOp:      out std_logic_vector(1 downto 0):= B"00"
+        o_l_branch:   out std_logic;
+        o_r_branch:     out std_logic;
+        o_r_mem_rd:   out std_logic;
+        o_r_mem_we:  out std_logic;
+        o_r_reg_we:  out std_logic;
+        o_l_alu_src_imm:   out std_logic;
+        o_r_alu_src_imm:     out std_logic;
+        o_r_reg_src_mem:     out std_logic;
+        o_r_alu_op:      out std_logic_vector(1 downto 0)
     );
     end component;
 
     component Execute port(
         clk:         in std_logic;
-        i_PC:        in std_logic_vector(63 downto 0):= (others => '0');
-        i_data_A:    in std_logic_vector(63 downto 0):= (others => '0');
-        i_data_B:    in std_logic_vector(63 downto 0):= (others => '0');
-        i_imm:       in std_logic_vector(63 downto 0):= (others => '0');
-        i_reg_W:     in std_logic_vector(4 downto 0):= (others => '0');
-        i_func7:     in std_logic_vector(6 downto 0):= (others => '0');
-        i_func3:     in std_logic_vector(2 downto 0):= (others => '0');
+        i_pc:        in std_logic_vector(63 downto 0);
+        i_data_a:    in std_logic_vector(63 downto 0);
+        i_data_b:    in std_logic_vector(63 downto 0);
+        i_imm:       in std_logic_vector(63 downto 0);
+        i_reg_w:     in std_logic_vector(4 downto 0);
+        i_func7:     in std_logic_vector(6 downto 0);
+        i_func3:     in std_logic_vector(2 downto 0);
         -- Controll signal
-        i_branch:     in std_logic := '0';
-        i_mem_read:   in std_logic := '0';
-        i_mem_write:  in std_logic := '0';
-        i_reg_write:  in std_logic := '0';
-        i_ALUsrc:     in std_logic := '0';
-        i_regsrc:     in std_logic := '0';
-        i_ALUOp:      in std_logic_vector(1 downto 0):= B"00";
+        i_branch:     in std_logic;
+        i_mem_rd:   in std_logic;
+        i_mem_we:  in std_logic;
+        i_reg_we:  in std_logic;
+        i_alu_src_imm:     in std_logic;
+        i_reg_src_mem:     in std_logic;
+        i_alu_op:      in std_logic_vector(1 downto 0);
         --
         -- OUT
         --
-        o_nextInstr:  out std_logic_vector(63 downto 0):= (others => '0');
-        o_ALUres:     out std_logic_vector(63 downto 0):= (others => '0');
-        o_data_MEM:   out std_logic_vector(63 downto 0):= (others => '0');
-        o_reg_W:      out std_logic_vector(4 downto 0):= (others => '0');
+        o_l_next_instr:  out std_logic_vector(63 downto 0);
+        o_r_alu_res:     out std_logic_vector(63 downto 0);
+        o_r_data_mem:   out std_logic_vector(63 downto 0);
+        o_r_reg_w:      out std_logic_vector(4 downto 0);
         -- Controll signal
-        o_bge:     out std_logic := '0';
-        o_branch:     out std_logic := '0';
-        o_mem_read:   out std_logic := '0';
-        o_mem_write:  out std_logic := '0';
-        o_reg_write:  out std_logic := '0';
-        o_regsrc:     out std_logic := '0';
-        o_Zero:       out std_logic := '0';
-        o_Pos:       out std_logic := '0'
+        o_r_mem_rd:  out std_logic;
+        o_r_mem_we:  out std_logic;
+        o_r_reg_we:  out std_logic;
+        o_r_reg_src_mem:     out std_logic;
+        -- Jump
+        o_l_branch: out std_logic;
+        o_l_branch_taken: out std_logic
     );
     end component;
 
     component Mem_Access port(
-        clk: in std_logic := '0';
-        i_ALUres: in std_logic_vector(63 downto 0);
-        i_data_MEM: in std_logic_vector(63 downto 0);
-        i_reg_W: in std_logic_vector(4 downto 0);
-        i_nextInstr: in std_logic_vector(63 downto 0);
+        clk: in std_logic;
+        i_alu_res: in std_logic_vector(63 downto 0);
+        i_data_mem: in std_logic_vector(63 downto 0);
+        i_reg_w: in std_logic_vector(4 downto 0);
         -- Control signals
-        i_bge: in std_logic := '0';
-        i_branch: in std_logic := '0';
-        i_mem_read: in std_logic := '0';
-        i_mem_write: in std_logic := '0';
-        i_reg_write: in std_logic := '0';
-        i_regsrc: in std_logic := '0';
-        i_Zero: in std_logic := '0';
-        i_Pos: in std_logic := '0';
+        i_mem_rd: in std_logic;
+        i_mem_we: in std_logic;
+        i_reg_we: in std_logic;
+        i_reg_src_mem: in std_logic;
         --
         -- OUT
         --
-        o_nextInstr: out std_logic_vector(63 downto 0);
-        o_mem_data: out std_logic_vector(63 downto 0);
-        o_ALUres: out std_logic_vector(63 downto 0);
-        o_reg_W: out std_logic_vector(4 downto 0);
+        o_r_mem_data: out std_logic_vector(63 downto 0);
+        o_r_alu_res: out std_logic_vector(63 downto 0);
+        o_r_reg_w: out std_logic_vector(4 downto 0);
         --
-        o_PCsrc: out std_logic := '0';
-        --
-        o_regsrc: out std_logic := '0';
-        o_reg_write: out std_logic := '0'
+        o_r_reg_src_mem: out std_logic;
+        o_r_reg_we: out std_logic
     );
     end component;
 begin
 
 
-r_data_to_reg <= r_mem_data when r_MemAccess_regsrc = '1' else r_MemAccess_ALUres;
-process(clk) is
-    -- variable tmp_mem_data: std_logic_vector(63 downto 0):= (others => '0');
-    -- variable tmp_MemAccess_ALUres: std_logic_vector(63 downto 0):= (others => '0');
-    variable tmp_MemAccess_reg_W: std_logic_vector(4 downto 0):= (others => '0');
-    variable tmp_MemAccess_regsrc: std_logic := '0';
-    variable tmp_MemAccess_reg_write: std_logic := '0';
-begin
-    if rising_edge(clk) then
-        -- l_mem_data <= tmp_mem_data;
-        -- l_MemAccess_ALUres <= tmp_MemAccess_ALUres;
-        l_MemAccess_reg_W <= tmp_MemAccess_reg_W;
-        l_MemAccess_regsrc <= tmp_MemAccess_regsrc;
-        l_MemAccess_reg_write <= tmp_MemAccess_reg_write;
-
-        -- if l_MemAccess_regsrc = '1' then
-        --     l_data_to_reg <= tmp_mem_data; 
-        -- else
-        --     l_data_to_reg <= tmp_MemAccess_ALUres;
-        -- end if;
-
-        -- tmp_mem_data := r_mem_data;
-        -- tmp_MemAccess_ALUres := r_MemAccess_ALUres;
-        tmp_MemAccess_reg_W := r_MemAccess_reg_W;
-        tmp_MemAccess_regsrc := r_MemAccess_regsrc;
-        tmp_MemAccess_reg_write := r_MemAccess_reg_write;
-    end if;
-end process;
+l_WriteBack_data_reg <= r_MemAccess_mem_data when r_MemAccess_reg_src_mem = '1' else r_MemAccess_alu_res;
 
 
--- INIT: process(clk) is
--- begin
--- if power_on /= '1' then
---     l_PCstall <= '1';
---     if i_we = '1' then
-
---     end if;
--- else
---     l_PCstall <= '0';
--- end if;
-
--- end INIT process
-l_Decode_untaken_branch <= '1' when l_PCsrc = '0' and l_Decode_branch = '1' and l_Decode_fast_branch='1' else '0'; 
+--l_Decode_untaken_branch <= '1' when l_PCsrc = '0' and l_Decode_branch = '1' and l_Decode_fast_branch='1' else '0'; 
 HDU_inst: HDU
 Port Map(
-    i_branch => l_Decode_fast_branch,
-    i_untaken => l_Decode_untaken_branch,
-    i_taken => l_PCsrc,
-    o_PC_stall => open,
-    o_Fetch_flush => l_Fetch_flush,
-    o_Fetch_reg_stall => l_Fetch_reg_stall,
-    o_Decode_reg_stall => open
+    clk => clk,
+    i_branch => l_Decode_branch,
+    i_branch_taken => l_Execute_branch_taken,
+    i_reg_a => l_Decode_reg_a,
+    i_reg_b => l_Decode_reg_b,
+    i_alu_src_imm => l_Decode_alu_src_imm,
+    i_Execute_reg_w => r_Decode_reg_w,
+    i_Execute_reg_we => r_Decode_reg_we,
+    i_MemAccess_reg_W => r_Execute_reg_w,
+    i_MemAccess_reg_we => r_Execute_reg_we,
+    o_Fetch_stall => l_HDU_Fetch_stall,
+    o_Fetch_flush => l_HDU_Fetch_flush,
+    o_Decode_stall => l_HDU_Decode_stall
 );
 
 
 FETCH_PHASE: Fetch 
 Port Map(
     clk => clk,
-    i_nextInstr => l_MemAccess_nextInstr,
-    i_PCsrc => l_PCsrc,
-    i_PCstall => '0',
-    i_flush => l_Fetch_flush,
-    i_reg_stall => l_Fetch_reg_stall,
-    o_PC => l_Fetch_PC,
-    o_instr => l_instr
+    i_flush => l_HDU_Fetch_flush,
+    i_stall => l_HDU_Fetch_stall,
+    i_branch_taken => l_Execute_branch_taken,
+    i_next_instr => l_Execute_next_instr,
+    o_r_pc => r_Fetch_pc,
+    o_r_instr => r_Fetch_instr
 );
 
 DECODE_PHASE: Decode
 Port Map(
     clk => clk,
-    i_instr => l_instr,
-    i_PC => l_Fetch_PC,
-
-    i_reg_to_write => r_MemAccess_reg_W,
-    i_data_to_reg => r_data_to_reg,
-    i_reg_we => r_MemAccess_reg_write,
-
-    i_stall => l_Fetch_reg_stall,
-    i_taken_branch => l_PCsrc,
-
-    o_PC => l_Decode_PC,
-    o_data_A => l_data_A,
-    o_data_B => l_data_B,
-    o_imm => l_imm,
-    o_reg_W => l_Decode_reg_W,
-    o_func7 => l_func7,
-    o_func3 => l_func3,
+    i_instr => r_Fetch_instr, 
+    i_pc => r_Fetch_pc,
+    i_w_reg => r_MemAccess_reg_w,
+    i_data_reg => l_WriteBack_data_reg,
+    i_reg_we => r_MemAccess_reg_we,
+    i_stall => l_HDU_Decode_stall,
+    --i_taken_branch => l_Execute_branch_taken, 
+    -- OUT
     --
-    o_l_branch => l_Decode_fast_branch,
-    o_branch => l_Decode_branch,
-    o_mem_read => l_Decode_mem_read,
-    o_mem_write => l_Decode_mem_write,
-    o_reg_write => l_Decode_reg_write,
-    o_ALUsrc => l_ALUsrc,
-    o_regsrc => l_Decode_regsrc,
-    o_ALUOp => l_ALUOp
+    o_r_pc => r_Decode_pc,
+    o_r_data_a => r_Decode_data_a,
+    o_r_data_b => r_Decode_data_b,
+    o_r_imm => r_Decode_imm,
+    o_r_reg_w => r_Decode_reg_w,
+    o_r_func7 => r_Decode_func7,
+    o_r_func3 => r_Decode_func3,
+    o_l_reg_a => l_Decode_reg_a,
+    o_l_reg_b => l_Decode_reg_b,
+    -- Controll signal
+    o_l_branch => l_Decode_branch,
+    o_r_branch => r_Decode_branch,
+    o_r_mem_rd => r_Decode_mem_rd,
+    o_r_mem_we => r_Decode_mem_we,
+    o_r_reg_we => r_Decode_reg_we,
+    o_l_alu_src_imm => l_Decode_alu_src_imm,
+    o_r_alu_src_imm => r_Decode_alu_src_imm,
+    o_r_reg_src_mem => r_Decode_reg_src_mem,
+    o_r_alu_op => r_Decode_alu_op
 );
 
 EXECUTE_PHASE: Execute
 Port Map(
-    clk => clk,
-    i_PC => l_Decode_PC,
-    i_data_A => l_data_A,
-    i_data_B => l_data_B,
-    i_imm => l_imm,
-    i_reg_W => l_Decode_reg_W,
-    i_func7 => l_func7,
-    i_func3 => l_func3,
+    clk => clk, 
+    i_pc => r_Decode_pc,
+    i_data_a => r_Decode_data_a,
+    i_data_b => r_Decode_data_b,
+    i_imm => r_Decode_imm,
+    i_reg_w => r_Decode_reg_w,
+    i_func7 => r_Decode_func7,
+    i_func3 => r_Decode_func3,
     -- Controll signal
-    i_branch => l_Decode_branch,
-    i_mem_read => l_Decode_mem_read,
-    i_mem_write => l_Decode_mem_write,
-    i_reg_write => l_Decode_reg_write,
-    i_ALUsrc => l_ALUsrc,
-    i_regsrc => l_Decode_regsrc,
-    i_ALUOp => l_ALUOp,
+    i_branch => r_Decode_branch,
+    i_mem_rd => r_Decode_mem_rd,
+    i_mem_we => r_Decode_mem_we,
+    i_reg_we => r_Decode_reg_we,
+    i_alu_src_imm => r_Decode_alu_src_imm,
+    i_reg_src_mem => r_Decode_reg_src_mem,
+    i_alu_op => r_Decode_alu_op,
     --
     -- OUT
     --
-    o_nextInstr => l_Execute_nextInstr,
-    o_ALUres => l_Execute_ALUres,
-    o_data_MEM => l_data_MEM,
-    o_reg_W => l_Execute_reg_W,
+    o_l_next_instr => l_Execute_next_instr,
+    o_r_alu_res => r_Execute_alu_res,
+    o_r_data_mem => r_Execute_data_mem,
+    o_r_reg_w => r_Execute_reg_w,
     -- Controll signal
-    o_bge  => l_Execute_bge,
-    o_branch => l_Execute_branch,
-    o_mem_read => l_Execute_mem_read,
-    o_mem_write => l_Execute_mem_write,
-    o_reg_write => l_Execute_reg_write,
-    o_regsrc => l_Execute_regsrc,
-    o_Zero => l_Execute_Zero,
-    o_Pos => l_Execute_Pos
+    o_r_mem_rd => r_Execute_mem_rd,
+    o_r_mem_we => r_Execute_mem_we,
+    o_r_reg_we => r_Execute_reg_we,
+    o_r_reg_src_mem => r_Execute_reg_src_mem,
+    -- Jump
+    o_l_branch => l_Execute_branch,
+    o_l_branch_taken => l_Execute_branch_taken
 );
 
 
 MEM_ACC_PHASE: Mem_Access
 Port Map(
     clk => clk,
-    i_ALUres => l_Execute_ALUres,
-    i_data_MEM => l_data_MEM,
-    i_reg_W => l_Execute_reg_W,
-    i_nextInstr => l_Execute_nextInstr,
+    i_alu_res => r_Execute_alu_res,
+    i_data_mem => r_Execute_data_mem,
+    i_reg_w => r_Execute_reg_w,
     -- Control signals
-    i_bge => l_Execute_bge,
-    i_branch => l_Execute_branch,
-    i_mem_read => l_Execute_mem_read,
-    i_mem_write => l_Execute_mem_write,
-    i_reg_write => l_Execute_reg_write,
-    i_regsrc => l_Execute_regsrc,
-    i_Zero => l_Execute_Zero,
-    i_Pos => l_Execute_Pos,
+    i_mem_rd => r_Execute_mem_rd,
+    i_mem_we => r_Execute_mem_we,
+    i_reg_we => r_Execute_reg_we,
+    i_reg_src_mem => r_Execute_reg_src_mem,
     --
     -- OUT
     --
-    o_nextInstr => l_MemAccess_nextInstr,
-    o_mem_data => r_mem_data,
-    o_ALUres   => r_MemAccess_ALUres,
-    o_reg_W    => r_MemAccess_reg_W,
+    o_r_mem_data => r_MemAccess_mem_data,
+    o_r_alu_res => r_MemAccess_alu_res,
+    o_r_reg_w => r_MemAccess_reg_w,
     --
-    o_PCsrc => l_PCsrc,
-    --
-    o_regsrc   => r_MemAccess_regsrc,
-    o_reg_write => r_MemAccess_reg_write
+    o_r_reg_src_mem => r_MemAccess_reg_src_mem,
+    o_r_reg_we => r_MemAccess_reg_we
 );
 
 

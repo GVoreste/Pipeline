@@ -4,19 +4,19 @@ use IEEE.numeric_std.all;
 
 entity ALU is
 port (
-       i_operand_A: in std_logic_vector(63 downto 0):= (others => '0');
-	   i_operand_B: in std_logic_vector(63 downto 0):= (others => '0');
-       i_ALUfunc:   in std_logic_vector( 3 downto 0):= (others => '0');
-       o_Zero:      out std_logic := '0';
-       o_Pos:       out std_logic := '0';
-       o_ALUres:    out std_logic_vector(63 downto 0):=(others => '0')
+       i_operand_a: in std_logic_vector(63 downto 0):= (others => '0');
+	   i_operand_b: in std_logic_vector(63 downto 0):= (others => '0');
+       i_alu_func:   in std_logic_vector( 3 downto 0):= (others => '0');
+       o_zero:      out std_logic := '0';
+       o_pos:       out std_logic := '0';
+       o_alu_res:    out std_logic_vector(63 downto 0):=(others => '0')
        );
 end ALU;
 
 
 architecture RTL of ALU is
     signal l_ADDERres: std_logic_vector(63 downto 0):=(others => '0');
-    signal l_ALUres: std_logic_vector(63 downto 0):=(others => '0');
+    signal l_alu_res: std_logic_vector(63 downto 0):=(others => '0');
     signal l_sub: std_logic := '0';
     component Adder
         port(
@@ -27,42 +27,42 @@ architecture RTL of ALU is
         );
     end component;
 begin
-    process(i_ALUfunc,i_operand_A,i_operand_B,l_ADDERres,l_ALUres) is
+    process(i_alu_func,i_operand_A,i_operand_B,l_ADDERres,l_alu_res) is
     begin
-        case i_ALUfunc is
+        case i_alu_func is
             when "0010" => -- ADD
                 l_sub <= '0';
-                l_ALUres <= l_ADDERres;
+                l_alu_res <= l_ADDERres;
             when "0110" => -- SUB
                 l_sub <= '1';
-                l_ALUres <= l_ADDERres;
+                l_alu_res <= l_ADDERres;
             when "0000" => -- OR
                 l_sub <= '-';
                 for i in 0 to 63
                 loop
-                    l_ALUres(i) <= i_operand_A(i) or  i_operand_B(i);
+                    l_alu_res(i) <= i_operand_A(i) or  i_operand_B(i);
                 end loop;
             when "0001" => -- AND 
                 l_sub <= '-';
                 for i in 0 to 63
                 loop
-                    l_ALUres(i) <= i_operand_A(i) and  i_operand_B(i);
+                    l_alu_res(i) <= i_operand_A(i) and  i_operand_B(i);
                 end loop;
             when others => -- AND
                 l_sub <= '-';
                 for i in 0 to 63
                 loop
-                    l_ALUres(i) <= i_operand_A(i) and  i_operand_B(i);
+                    l_alu_res(i) <= i_operand_A(i) and  i_operand_B(i);
                 end loop;
         end case;
-        if l_ALUres = x"00000000_00000000" then
+        if l_alu_res = x"00000000_00000000" then
             o_Zero <= '1';
         else
             o_Zero <= '0';
         end if;
     end process;  
-    o_Pos <= l_ALUres(63); 
-    o_ALUres <= l_ALUres;
+    o_Pos <= l_alu_res(63); 
+    o_alu_res <= l_alu_res;
     ADDER_istance: Adder
     Port Map(
         i_operand_A => i_operand_A,

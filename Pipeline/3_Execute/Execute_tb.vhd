@@ -182,38 +182,36 @@ end record;
     signal tb_PC : std_logic_vector(63 downto 0) := (others => '0');
     component Execute
     port ( 
-        clk:         in std_logic;
-        i_PC:        in std_logic_vector(63 downto 0):= (others => '0');
-        i_data_A:    in std_logic_vector(63 downto 0):= (others => '0');
-        i_data_B:    in std_logic_vector(63 downto 0):= (others => '0');
-        i_imm:       in std_logic_vector(63 downto 0):= (others => '0');
-        i_reg_W:     in std_logic_vector(4 downto 0):= (others => '0');
-        i_func7:     in std_logic_vector(6 downto 0):= (others => '0');
-        i_func3:     in std_logic_vector(2 downto 0):= (others => '0');
+        i_pc:        in std_logic_vector(63 downto 0);
+        i_data_a:    in std_logic_vector(63 downto 0);
+        i_data_b:    in std_logic_vector(63 downto 0);
+        i_imm:       in std_logic_vector(63 downto 0);
+        i_reg_w:     in std_logic_vector(4 downto 0);
+        i_func7:     in std_logic_vector(6 downto 0);
+        i_func3:     in std_logic_vector(2 downto 0);
         -- Controll signal
-        i_branch:     in std_logic := '0';
-        i_mem_read:   in std_logic := '0';
-        i_mem_write:  in std_logic := '0';
-        i_reg_write:  in std_logic := '0';
-        i_ALUsrc:     in std_logic := '0';
-        i_regsrc:     in std_logic := '0';
-        i_ALUOp:      in std_logic_vector(1 downto 0):= B"00";
+        i_branch:     in std_logic;
+        i_mem_rd:   in std_logic;
+        i_mem_we:  in std_logic;
+        i_reg_we:  in std_logic;
+        i_alu_src_imm:     in std_logic;
+        i_reg_src_mem:     in std_logic;
+        i_alu_op:      in std_logic_vector(1 downto 0);
         --
         -- OUT
         --
-        o_nextInstr:  out std_logic_vector(63 downto 0):= (others => '0');
-        o_ALUres:     out std_logic_vector(63 downto 0):= (others => '0');
-        o_data_MEM:   out std_logic_vector(63 downto 0):= (others => '0');
-        o_reg_W:      out std_logic_vector(4 downto 0):= (others => '0');
+        o_l_next_instr:  out std_logic_vector(63 downto 0);
+        o_r_alu_res:     out std_logic_vector(63 downto 0);
+        o_r_data_mem:   out std_logic_vector(63 downto 0);
+        o_r_reg_w:      out std_logic_vector(4 downto 0);
         -- Controll signal
-        o_bge:        out std_logic;
-        o_branch:     out std_logic := '0';
-        o_mem_read:   out std_logic := '0';
-        o_mem_write:  out std_logic := '0';
-        o_reg_write:  out std_logic := '0';
-        o_regsrc:     out std_logic := '0';
-        o_Zero:       out std_logic := '0';
-        o_Pos:        out std_logic
+        o_r_mem_rd:  out std_logic;
+        o_r_mem_we:  out std_logic;
+        o_r_reg_we:  out std_logic;
+        o_r_reg_src_mem:     out std_logic;
+        -- Jump
+        o_l_branch: out std_logic;
+        o_l_branch_taken: out std_logic
     );
     end component;
 begin

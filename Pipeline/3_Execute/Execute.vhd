@@ -5,45 +5,44 @@ use IEEE.Numeric_Std.all;
 entity Execute is
     port ( 
         clk:         in std_logic;
-        i_PC:        in std_logic_vector(63 downto 0);
-        i_data_A:    in std_logic_vector(63 downto 0);
-        i_data_B:    in std_logic_vector(63 downto 0);
+        i_pc:        in std_logic_vector(63 downto 0);
+        i_data_a:    in std_logic_vector(63 downto 0);
+        i_data_b:    in std_logic_vector(63 downto 0);
         i_imm:       in std_logic_vector(63 downto 0);
-        i_reg_W:     in std_logic_vector(4 downto 0);
+        i_reg_w:     in std_logic_vector(4 downto 0);
         i_func7:     in std_logic_vector(6 downto 0);
         i_func3:     in std_logic_vector(2 downto 0);
         -- Controll signal
         i_branch:     in std_logic;
-        i_mem_read:   in std_logic;
-        i_mem_write:  in std_logic;
-        i_reg_write:  in std_logic;
-        i_ALUsrc:     in std_logic;
-        i_regsrc:     in std_logic;
-        i_ALUOp:      in std_logic_vector(1 downto 0);
+        i_mem_rd:   in std_logic;
+        i_mem_we:  in std_logic;
+        i_reg_we:  in std_logic;
+        i_alu_src_imm:     in std_logic;
+        i_reg_src_mem:     in std_logic;
+        i_alu_op:      in std_logic_vector(1 downto 0);
         --
         -- OUT
         --
-        o_nextInstr:  out std_logic_vector(63 downto 0);
-        o_ALUres:     out std_logic_vector(63 downto 0);
-        o_data_MEM:   out std_logic_vector(63 downto 0);
-        o_reg_W:      out std_logic_vector(4 downto 0);
+        o_l_next_instr:  out std_logic_vector(63 downto 0);
+        o_r_alu_res:     out std_logic_vector(63 downto 0);
+        o_r_data_mem:   out std_logic_vector(63 downto 0);
+        o_r_reg_w:      out std_logic_vector(4 downto 0);
         -- Controll signal
-        o_bge:        out std_logic;
-        o_branch:     out std_logic;
-        o_mem_read:   out std_logic;
-        o_mem_write:  out std_logic;
-        o_reg_write:  out std_logic;
-        o_regsrc:     out std_logic;
-        o_Zero:       out std_logic;
-        o_Pos:        out std_logic
+        o_r_mem_rd:  out std_logic;
+        o_r_mem_we:  out std_logic;
+        o_r_reg_we:  out std_logic;
+        o_r_reg_src_mem:     out std_logic;
+        -- Jump
+        o_l_branch: out std_logic;
+        o_l_branch_taken: out std_logic
         );
 end entity;
 
 architecture RTL of Execute is
     component Adder
         port(
-            i_operand_A: in std_logic_vector(63 downto 0);
-            i_operand_B: in std_logic_vector(63 downto 0);
+            i_operand_a: in std_logic_vector(63 downto 0);
+            i_operand_b: in std_logic_vector(63 downto 0);
             i_sub:       in std_logic;
             o_res:       out std_logic_vector(63 downto 0)
         );
@@ -52,99 +51,120 @@ architecture RTL of Execute is
         port ( 
             i_operand_A: in std_logic_vector(63 downto 0);
             i_operand_B: in std_logic_vector(63 downto 0);
-            i_ALUfunc:   in std_logic_vector( 3 downto 0);
-            o_Zero:      out std_logic;
-            o_Pos:       out std_logic;
-            o_ALUres:    out std_logic_vector(63 downto 0)
+            i_alu_func:   in std_logic_vector( 3 downto 0);
+            o_zero:      out std_logic;
+            o_pos:       out std_logic;
+            o_alu_res:    out std_logic_vector(63 downto 0)
             );
     end component ALU;
     component ALUControl
         port (
-            i_ALUOp:      in std_logic_vector(1 downto 0);
+            i_alu_op:      in std_logic_vector(1 downto 0);
             i_func3:      in std_logic_vector(2 downto 0);
             i_func7:      in std_logic_vector(6 downto 0);
             o_bge:        out std_logic := '0';
-            o_ALUfunc:    out std_logic_vector(3 downto 0)
+            o_alu_func:    out std_logic_vector(3 downto 0)
             );
     end component;
-    signal l_ALUfunc: std_logic_vector(3 downto 0);
-    signal l_data_B: std_logic_vector(63 downto 0); 
-    signal r_nextInstr: std_logic_vector(63 downto 0); 
-    signal r_ALUres: std_logic_vector(63 downto 0); 
-    signal r_data_MEM: std_logic_vector(63 downto 0); 
-    signal r_reg_W: std_logic_vector(4 downto 0);
+    signal l_alu_func: std_logic_vector(3 downto 0);
+    signal l_data_b: std_logic_vector(63 downto 0); 
+    signal l_next_instr: std_logic_vector(63 downto 0); 
+    signal l_alu_res: std_logic_vector(63 downto 0);
+    signal r_alu_res: std_logic_vector(63 downto 0); 
+    signal l_data_mem: std_logic_vector(63 downto 0);
+    signal r_data_mem: std_logic_vector(63 downto 0);
+    signal l_reg_w: std_logic_vector(4 downto 0); 
+    signal r_reg_w: std_logic_vector(4 downto 0);
     --
+    signal l_branch: std_logic;
     signal r_branch: std_logic;
-    signal r_mem_read: std_logic;
-    signal r_mem_write: std_logic;
-    signal r_reg_write: std_logic;
-    signal r_regsrc: std_logic;
-    signal r_Zero: std_logic;
-    signal r_Pos: std_logic;
-    signal r_bge: std_logic;
+    signal l_mem_rd: std_logic;
+    signal r_mem_rd: std_logic;
+    signal l_mem_we: std_logic;
+    signal r_mem_we: std_logic;
+    signal l_reg_we: std_logic;
+    signal r_reg_we: std_logic;
+    signal l_reg_src_mem: std_logic;
+    signal r_reg_src_mem: std_logic;
 
+
+    signal l_branch_taken: std_logic;
+    signal l_pos: std_logic;
+    signal l_zero: std_logic;
+    signal l_bge: std_logic;
     signal l_imm_jump: std_logic_vector(63 downto 0);
     signal l_imm_jump_corrected: std_logic_vector(63 downto 0);
 begin
-    r_reg_W <= i_reg_W;
-    r_data_MEM <= i_data_B;
+    l_reg_w <= i_reg_w;
+    l_data_mem <= i_data_b;
+    
+    l_data_b <= i_data_b when i_alu_src_imm /= '1' else  i_imm;
+    l_imm_jump <= i_imm(63 downto 0); -- i_imm(62 downto 0) & B"0";
 
-    r_branch <= i_branch;
-    r_mem_read <= i_mem_read;
-    r_mem_write <= i_mem_write;
-    r_reg_write <= i_reg_write;
-    r_regsrc <= i_regsrc;
+
+    l_branch <= i_branch;
+
+    l_mem_rd <= i_mem_rd;
+    l_mem_we <= i_mem_we;
+    l_reg_we <= i_reg_we;
+    l_reg_src_mem <= i_reg_src_mem;
+    
+    l_branch_taken <= '1' when l_branch='1' and (
+        (l_pos='1' and l_bge='1') or 
+        (l_zero='1' and l_bge/='1')
+    ) else '0';
+    l_branch <= i_branch;
+
     process(clk) is
     begin
         if rising_edge(clk) then
-            o_nextInstr <= r_nextInstr;
-            o_ALUres  <= r_ALUres;
-            o_data_MEM <= r_data_MEM;
-            o_reg_W <= r_reg_W;
+            r_alu_res  <= l_alu_res;
+            r_data_mem <= l_data_mem;
+            r_reg_w <= l_reg_w;
             -- Controll signal
-            o_branch    <= r_branch;
-            o_mem_read  <= r_mem_read;
-            o_mem_write <= r_mem_write;
-            o_reg_write <= r_reg_write;
-            o_regsrc    <= r_regsrc;
-            o_bge       <= r_bge;
-            o_Zero      <= r_Zero;
-            o_Pos       <= r_Pos;
+            r_mem_rd <= l_mem_rd;
+            r_mem_we <= l_mem_we;
+            r_reg_we <= l_reg_we;
+            r_reg_src_mem <= l_reg_src_mem;
         end if;
     end process;
-    process(i_imm,i_data_B,i_ALUsrc) is
-    begin
-        if i_ALUsrc = '1' then
-            l_data_B <= i_imm;
-        else
-            l_data_B <= i_data_B;
-        end if;
-    end process;
-    l_imm_jump <= i_imm(63 downto 0); -- i_imm(62 downto 0) & B"0";
+    o_r_alu_res  <= r_alu_res;
+    o_r_data_mem <= r_data_mem;
+    o_r_reg_w    <= r_reg_w;
+    -- Controll signal
+    o_r_mem_rd <= r_mem_rd;
+    o_r_mem_we <= r_mem_we;
+    o_r_reg_we <= r_reg_we;
+    o_r_reg_src_mem <= r_reg_src_mem;
+
+    o_l_branch_taken <= l_branch_taken;
+    o_l_branch <= l_branch;
+
+    
 
     ALU_INST: ALU
     Port Map(
-        i_operand_A => i_data_A,
-        i_operand_B => l_data_B,
-        i_ALUfunc => l_ALUfunc,
-        o_Zero    => r_Zero,
-        o_Pos     => r_Pos,
-        o_ALUres  => r_ALUres
+        i_operand_A => i_data_a,
+        i_operand_B => l_data_b,
+        i_alu_func => l_alu_func,
+        o_zero => l_zero,
+        o_pos => l_pos,
+        o_alu_res => l_alu_res
     );
 
     ALU_CNTL_INST: ALUControl
     Port Map(
-        i_ALUOp => i_ALUOp,
+        i_alu_op => i_alu_op,
         i_func3 => i_func3,
         i_func7 => i_func7,
-        o_bge   => r_bge,
-        o_ALUfunc => l_ALUfunc
+        o_bge => l_bge,
+        o_alu_func => l_alu_func
     );
 
     CORRECTION_ADDER: Adder
     Port Map(
         i_operand_A => l_imm_jump,
-        i_operand_B => (others => '1'),
+        i_operand_B => (others => '0'),--(others => '1'),
         i_sub => '0',
         o_res => l_imm_jump_corrected
     );
@@ -152,10 +172,10 @@ begin
 
     ADDER_ADDRESS: Adder
     Port Map(
-        i_operand_A => i_PC,
+        i_operand_A => i_pc,
         i_operand_B => l_imm_jump_corrected,
         i_sub => '0',
-        o_res => r_nextInstr
+        o_res => o_l_next_instr
     );
 
 end architecture;
