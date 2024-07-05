@@ -11,7 +11,6 @@ entity PC is
 		o_r_pc : out std_logic_vector(63 downto 0);
 		o_l_pc : out std_logic_vector(63 downto 0)
 	);
-	constant MAX_PC : integer := 255;
 	constant PC_INCREMENT : std_logic_vector(63 downto 0) := x"0000000000000001";
 end PC;
 
@@ -27,7 +26,7 @@ architecture count of PC is
 
 	signal l_pc_summed : std_logic_vector(63 downto 0);
 	signal l_pc : std_logic_vector(63 downto 0);
-	signal r_pc : std_logic_vector(63 downto 0) := x"FFFFFFFFFFFFFFFE";
+	signal r_pc : std_logic_vector(63 downto 0) := x"FFFFFFFFFFFFFFFF";
 	signal l_operand : std_logic_vector(63 downto 0);
 	signal l_stall : std_logic;
 begin
