@@ -1,33 +1,33 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
-use IEEE.Numeric_Std.all; 
+use IEEE.Numeric_Std.all;
 
 entity Adder_tb is
 end entity Adder_tb;
 
 architecture RTL of Adder_tb is
     signal tb_clk : std_logic := '0';
-    signal tb_operand_A:      std_logic_vector(63 downto 0):= (others => '0');
-    signal tb_operand_B: 	  std_logic_vector(63 downto 0):= (others => '0');
-    signal tb_sub: std_logic := '0';
+    signal tb_operand_A : std_logic_vector(63 downto 0) := (others => '0');
+    signal tb_operand_B : std_logic_vector(63 downto 0) := (others => '0');
+    signal tb_sub : std_logic := '0';
     constant clk_T : time := 10 ns;
 
-    component Adder 
+    component Adder
         port (
-               i_operand_A:     in std_logic_vector(63 downto 0):= (others => '0');
-               i_operand_B: 	in std_logic_vector(63 downto 0):= (others => '0');
-               i_sub:           in std_logic := '0';
-               o_res:           out std_logic_vector(63 downto 0):= (others => '0')
-               );
+            i_operand_A : in std_logic_vector(63 downto 0) := (others => '0');
+            i_operand_B : in std_logic_vector(63 downto 0) := (others => '0');
+            i_sub : in std_logic := '0';
+            o_res : out std_logic_vector(63 downto 0) := (others => '0')
+        );
     end component Adder;
 begin
-    CLK: process is
+    CLK : process is
     begin
         wait for clk_T/2;
         tb_clk <= not tb_clk;
     end process CLK;
 
-    STIMULUS_GEN: process is
+    STIMULUS_GEN : process is
     begin
         wait for clk_T/2;
         -- ADD
@@ -71,7 +71,7 @@ begin
         tb_operand_A <= x"0000000000000000";
         tb_operand_B <= x"0000000000000000";
         -- 0000000000000000
-        wait for 3*clk_T;
+        wait for 3 * clk_T;
         -- SUB
         tb_sub <= '1';
         tb_operand_A <= x"AAAA00000000AAAA";
@@ -116,14 +116,11 @@ begin
         wait;
     end process STIMULUS_GEN;
 
-    Adder_file_to_test: Adder
-    Port Map (
-        i_operand_A  => tb_operand_A,
-        i_operand_B  => tb_operand_B,
+    Adder_file_to_test : Adder
+    port map(
+        i_operand_A => tb_operand_A,
+        i_operand_B => tb_operand_B,
         i_sub => tb_sub,
         o_res => open
     );
 end architecture RTL;
-
-
-
