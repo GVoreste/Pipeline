@@ -23,21 +23,44 @@ end entity;
 
 
 architecture RTL of HDU is
+    signal l_branch_taken: std_logic;
+    signal l_branch: std_logic;
+    signal r_branch: std_logic;
     signal l_Fetch_stall: std_logic;
     signal r_Fetch_stall: std_logic;
+    signal l_Decode_stall: std_logic;
+    signal l_control_hazard: std_logic;
+    signal r_control_hazard: std_logic;
+    signal l_data_hazard: std_logic;
+    signal r_data_hazard: std_logic;
 begin
     process(clk) is
     begin
         if rising_edge(clk) then
+        r_data_hazard <= l_data_hazard;
+        r_control_hazard <= l_control_hazard;
         r_Fetch_stall <= l_Fetch_stall;
+        r_branch <= l_branch;
         end if;
     end process;
+    l_branch_taken <= i_branch_taken;
+    l_branch <= i_branch;
  
+    l_data_hazard <= '1' when (
+            i_Execute_reg_we = '1'   and (i_Execute_reg_w /= B"00000" and ((i_reg_a = i_Execute_reg_w) or ((i_reg_b = i_Execute_reg_w  ) and i_alu_src_imm /= '1')))
+        ) or (
+            i_MemAccess_reg_we = '1' and (i_MemAccess_reg_w /= B"00000" and ((i_reg_a = i_MemAccess_reg_w) or ((i_reg_b = i_MemAccess_reg_w) and i_alu_src_imm /= '1')))
+        ) else '0';
 
-    --o_Fetch_reg_stall <= '1' when i_branch='1' and (i_taken='0' and i_untaken='0') else '0';
-    --o_Fetch_flush <= '1' when i_taken='1' else '0';
-    l_Fetch_stall <= '1' when i_branch='1' and r_Fetch_stall/='1' else '0';
+
+
+    l_control_hazard <= '1' when l_branch='1' and r_branch/='1' else '0';
+
+
+    l_Fetch_stall <= '1' when (l_control_hazard='1' or r_control_hazard = '1') or (l_data_hazard = '1' or r_data_hazard='1') else '0';
+    l_Decode_stall <= '1' when ((l_control_hazard='1' or r_control_hazard = '1') or (l_data_hazard = '1' or r_data_hazard='1') or l_branch_taken='1') else '0';
     o_Fetch_stall <= l_Fetch_stall;
-    --o_Decode_stall <= '1' when i_branch='1' else '0';
+    o_Decode_stall <= l_Decode_stall;
+    
     o_Fetch_flush <= '0';
 end architecture RTL;

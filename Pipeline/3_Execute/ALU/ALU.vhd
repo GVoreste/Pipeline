@@ -61,7 +61,7 @@ begin
             o_Zero <= '0';
         end if;
     end process;  
-    o_Pos <= l_alu_res(63); 
+    o_Pos <= '1' when l_alu_res(63) /= '1' else '0'; 
     o_alu_res <= l_alu_res;
     ADDER_istance: Adder
     Port Map(

@@ -141,23 +141,25 @@ begin
             r_func3 <= l_func3;
             r_imm <= l_imm;
             
-            r_branch <= l_branch;
+            
+            
             if l_stall/='1' then
-                
+                r_branch <= l_branch;
+                r_alu_op <= l_alu_op;
                 r_mem_rd <= l_mem_rd;
                 r_mem_we <= l_mem_we;
                 r_reg_we <= l_reg_we;
                 r_alu_src_imm <= l_alu_src_imm;
                 r_reg_src_mem <= l_reg_src_mem;
-                r_alu_op <= l_alu_op;
-            else
                 
+            else
+                r_branch <= '0';
                 r_mem_rd <= '0';
                 r_mem_we <= '0';
                 r_reg_we <= '0';
                 r_alu_src_imm <= '0';
                 r_reg_src_mem <= '0';
-                r_alu_op <= B"00"; 
+                r_alu_op <= B"00";
             end if;
         end if;
     end process;
