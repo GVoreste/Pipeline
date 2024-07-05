@@ -1,4 +1,0 @@
-00 IDLE
-01 ten_cents_INSERTED
-10 twenty_cents_INSERTED
-11 MAKE_COFFEE
