@@ -1,6 +1,7 @@
 *
 !*/
 !**/*.vhd
-!**/*.txt
 !**/Makefile
 !**/*.c
+!Schema_processore/*
+!*.odp

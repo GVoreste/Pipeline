@@ -137,7 +137,6 @@ begin
     o_r_reg_src_mem <= r_reg_src_mem;
 
     o_l_branch_taken <= l_branch_taken;
-    o_l_branch <= l_branch;
 
     ALU_INST : ALU
     port map(
