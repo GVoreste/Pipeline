@@ -33,7 +33,6 @@ entity Execute is
         o_r_reg_we : out std_logic;
         o_r_reg_src_mem : out std_logic;
         -- Jump
-        o_l_branch : out std_logic;
         o_l_branch_taken : out std_logic
     );
 end entity;

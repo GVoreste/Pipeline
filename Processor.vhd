@@ -51,7 +51,6 @@ architecture RTL of CPU is
     signal r_Execute_reg_we : std_logic;
     signal r_Execute_reg_src_mem : std_logic;
 
-    signal l_Execute_branch : std_logic;
     signal l_Execute_branch_taken : std_logic;
 
     --
@@ -154,7 +153,6 @@ architecture RTL of CPU is
         o_r_reg_we : out std_logic;
         o_r_reg_src_mem : out std_logic;
         -- Jump
-        o_l_branch : out std_logic;
         o_l_branch_taken : out std_logic
         );
     end component;
@@ -275,7 +273,6 @@ begin
         o_r_reg_we => r_Execute_reg_we,
         o_r_reg_src_mem => r_Execute_reg_src_mem,
         -- Jump
-        o_l_branch => l_Execute_branch,
         o_l_branch_taken => l_Execute_branch_taken
     );
 
