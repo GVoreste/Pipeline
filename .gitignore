@@ -6,6 +6,7 @@
 !Schematics/
 !FullReport/
 !Presentation/
+!Presentation/*
 !Code/
 !Code/**/*
 !**/*.tex
