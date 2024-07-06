@@ -2,11 +2,11 @@
 !**/*.vhd
 !**/Makefile
 !**/*.c
-!Schematics/*
+!Schematics/**/*
 !Schematics/
-!FullReport/
+!FullReport/**/*
 !Presentation/
-!Presentation/*
+!Presentation/**/*
 !Code/
 !Code/**/*
 !**/*.tex
