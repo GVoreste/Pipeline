@@ -1,0 +1,339 @@
+\documentclass{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+\usepackage{xspace}
+\usepackage{siunitx}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage[acronym]{glossaries}
+\usepackage{spverbatim}
+\usepackage{pifont}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{pdfpages}
+\usepackage[export]{adjustbox}
+
+
+\input{commands}
+\makeglossaries
+\input{glossary}
+
+\title{Pipelined \RISCV processor}
+\author{Giuliano Verrando}
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+The goal of the project was to simulate the functional behaviour of a \RISCV pipelined processor.
+In my implementation every atomic instruction takes 5 different \glspl{clk} and the processor support a subset of the \RISCV \ISA.
+The subset is taken from the integer instructions in such a way to permit an implementation of a \sort algorithm.
+\end{abstract}
+\clearpage
+\tableofcontents
+\clearpage
+
+\printglossary[type=\acronymtype]
+\clearpage
+
+\section{Introduction}
+
+\begin{center}
+\begin{tabular}{|c |c c ||l|} 
+ \hline
+ Instruction & Type & ALU Operation & Name \\ 
+ \hline\hline
+ \texttt{ld} & I-Type & sum &  load \\ 
+ \hline
+ \texttt{sd} & S-Type & sum &  store \\
+ \hline
+ \texttt{add} & R-Type & sum &  add \\
+ \hline
+ \texttt{addi} & I-Type & sum &  add immediate \\
+ \hline
+  \texttt{beq} & B-Type & subtract & branch if $=$ \\
+ \hline
+  \texttt{bge} & B-Type & subtract & branch if $\geq$ \\
+ \hline
+ \texttt{nop} & - & - & No Operation \\
+ \hline
+\end{tabular}
+\end{center}
+
+
+\section{Fetch}
+\begin{minipage}{0.48\textwidth}
+This stage is responsible of incrementing the \PC to point the right instruction in the program memory.
+This instruction will be decoded and executed in the appropriate way during the following \glspl{clk}. 
+
+The aim of this step is to `choose' the right source for the \PC register that has to increment during execution of instructions that does not modify the program flow, but must load the right value if instructions like \texttt{beq} or \texttt{bge} are in the program and it is present some conditional execution.
+In case of \gls{stall} must hold the same value and fetch the same instruction.
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+  \includegraphics[width=0.9\textwidth,right,trim={400 150 400 150},clip]{components/Decode.png}
+\end{minipage}
+
+\subsection{Program counter}\label{PC}
+
+    The \acrfull{pc} is a fundamental component in the Fetch stage of a pipelined \RISCV processor. Its primary aim is to hold the address of the next instruction to be executed. At the beginning of each instruction cycle, the Program Counter's value is used to fetch the instruction from memory. Once the instruction is fetched, the \PC is incremented to point to the subsequent instruction in memory.
+    
+    The update might simply be an increment by a constant value, or it might involve more complex operations, such as adding an offset for branch instructions. The ability to change the \PC value dynamically is crucial for handling control flow changes, like jumps, branches, and subroutine calls, enabling the processor to execute instructions out of sequential order when required.
+    This increment is by a fixed amount, corresponding to the size of each instruction in the instruction set architecture \cite{chatgpt}.
+    
+    In my case my program \RAM provided 32-bit data, so the length of the instructions defined by the the \ISA themselves. This is a difference with the pure \RISCV \ISA, so \textbf{my implementation is not completely compliant with \RISCV specifications}, I choose to not conform totally because I had to adapt the code even if i had used \RISCV specifications because the \gls{linking} process that concern with address calculations is related to the memory layout that in our case is different to the standard one that usually is present in true computer.
+    So in my case it every instruction is far away from the nearest by 1 memory location.
+
+    In my implementation it take in input three signals:
+    \begin{itemize}
+        \item \texttt{stall},
+            if asserted it should stop incrementing the \PC
+        \item \texttt{branch taken},
+            if asserted it means that the normal flow is interrupted and the \acrlong{pc} must take a specific value, not the last number incremented (as the default behaviour should be)
+        \item \texttt{next instruction},
+            this is the custom value that the \PC must take if the normal flow is interrupted
+    \end{itemize}
+    and in output it determines two signals. They both represent the current value of the \PC, but one it is stored in a register the other is in input to the program memory \reff{P_MEM}, this is useful because every step takes a \gls{clk}, and with the value stored it can calculate the new address during normal execution and transmit its value to the decode phase \reff{DECODE} in sync with the instruction to execute.
+
+    My \PC have the register initialized to \texttt{0xFFFFFFFFFFFFFFFF} so that this number is summed to the increment and (in my case is \texttt{0x0000000000000001}) the first instruction fetched will be the one placed at memory address \texttt{0x0000000000000000}.
+
+\subsection{Program memory}\label{P_MEM}
+The program memory in a 5-stage pipelined \RISCV processor primary aim is to store the instructions that the processor will execute. This memory is distinct from the data memory \reff{D_MEM}, which holds the data operands and results of instructions. The program memory is typically implemented as a read-only memory (\ROM) or a non-volatile memory that retains the stored instructions even when the power is off, though it can also be implemented using \RAM in certain designs.
+
+In the Fetch stage, the program memory works closely with the program counter (\PC), which keeps track of the address of the next instruction to be executed. The Fetch stage retrieves or "fetches" the instruction stored at the address specified by the program counter. This involves the program counter sending the address to the program memory, which then outputs the instruction located at that address. This fetched instruction is then passed on to the next stage in the pipeline for decoding and execution \cite{chatgpt}.
+
+In my case my memory took in input only the address to read and it is read-only (so a \ROM). It takes in input 64-bit input and provide 32-bit data (the instructions). It is a \SI{1}{KiB} memory so the address can assume values $\in [\texttt{0x00}:\texttt{0xFF}]$, if it is more than the maximum, it saturate the value to \texttt{0xFF} and return the data located at this very last valid address.
+    
+\subsection*{Composition}
+
+The fetch stage is composed by this two components and so takes in input the signals that determines the value of the \PC as described in \ref{PC}. After a \gls{clk} it provide the instruction and his associated address. The memory is linked with the \PC before its value is placed in the associated register, so that the \ROM can provide the instruction in sync with the \PC.
+
+
+\section{Decode}\label{DECODE}
+\begin{minipage}{0.48\textwidth}
+This stage is responsible of interpreting the instruction and assert the right \glspl{control_sig} to choose the operation to perform on the data and his flow in and out the registers and the data memory.
+Another important thing that happens during this stage is the reading of the register of the \textbf{register file} \reff{regfile}. The data is then forwarded to the following stage.
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+  \includegraphics[width=0.9\textwidth,right,trim={400 150 400 150},clip]{components/Decode.png}
+\end{minipage}
+
+The control lines that are asserted are:
+\begin{itemize}
+    \item \texttt{branch}, this line is asserted if the instruction is a \emph{branch instruction} (that can modify the program flow) for example \texttt{beq}
+    \item \texttt{memory write}, this line is asserted if the data memory has to be written (\texttt{sd})
+    \item \texttt{memory read}, this line is asserted if the data memory has to be read (\texttt{ld})
+    \item \texttt{register write}, this line is asserted if the register has to be written, for example \texttt{addi}
+    \item \texttt{ALU source}, this line is asserted if the source of the second operand to the \ALU has to be the immediate calculated by the immediate generator \reff{immgen} (like in the case of \texttt{addi}) or a selected register (like in the case of \texttt{add})
+    \item \texttt{register source}, this line is asserted if the register has to be overwritten and the source of his new value has to be the data memory (\texttt{ld}). If it is not asserted the source of the value has to be the result of the \ALU calculation (for example like in \texttt{add})
+    \item \texttt{ALU operation}, \texttt{func7} and \texttt{func3} are forwarded to the \textbf{\ALU control unit} \reff{ALU_CU} that determine precisely the operation that the \ALU must perform on the data.
+\end{itemize}
+
+This step takes as input also the \texttt{stall} signal. If this signal is asserted the \glspl{control_sig} are forced to be inactive (in my case $=$`\texttt{0}') in this way the instruction that is decoded act like as a \texttt{nop}.
+
+The data that is forwarded by this stage is
+\begin{itemize}
+    \item \texttt{pc}, this is the address of the instruction decoded. With this number in the following stage is calculated the new address if there is a branch operation
+    \item \texttt{data a}, this is the data that was stored in the first register decoded. The index of the register is encoded in the instruction.
+    \item \texttt{data b}, this is the data that was stored in the second register decoded. The index of the register is encoded in some instructions
+    \item \texttt{immediate}, this is a number extended by the immediate generator \reff{immgen} that is encoded in some instructions
+    \item \texttt{register to write}, this is the index of the register that has to be overwritten
+    \item \texttt{register a}, this is the register from which the first operand of the \ALU is taken. This index is immediately forwarded to the \textbf{hazard detection unit} \reff{HDU} to check for any data \gls{hazard}
+    \item \texttt{register b}, this is the same of the last but for the second register
+\end{itemize}
+
+\subsection{Register file}\label{regfile}
+The register file in a \RISCV processor primary aim is to store and provide access to the processor's general-purpose registers, which are used to hold intermediate data and addresses during instruction execution.
+
+The register file consists of an array of registers, typically 32 in the case of a standard \RISCV implementation, each capable of holding a fixed amount of data, such as 32 or 64 bits. When an instruction is fetched and decoded, the register file is accessed to retrieve the values stored in the source registers specified by the instruction. These values are needed for the execution of various operations, such as arithmetic computations, logical operations, and address calculations. In addition to reading data, the register file also supports writing data back to a register. This write operation occurs in the write-back stage \reff{WB} of the pipeline, where the result of an instruction is written back into a designated destination register \cite{chatgpt}.
+
+My implementation deals only with 64-bit data, so every register of the 32 that are present, is 8-byte wide. As specified in the \ISA, the register with index 0 (\texttt{x0}) is hardwired to the value \texttt{0x0000000000000000}. This register file firstly read the data and than if is asserted the right pin, a register is overwritten.
+
+\subsection{Control unit}
+The control unit in a \RISCV processor plays a critical role in coordinating the operations of the processor by generating the necessary control signals based on the instruction being executed. Its primary aim is to interpret the fetched instruction and generate the appropriate signals to direct the activities of other components within the processor, ensuring that each instruction is executed correctly.
+
+In the decode stage, the control unit reads the instruction, which contains the operation code (opcode). By analyzing this code, the control unit determines the nature of the operation to be performed, such as arithmetic, logic, memory access, or branch operations. Based on this determination, it generates control signals that guide the subsequent stages of the pipeline.
+
+These control signals dictate the behavior of various parts of the processor, including the \acrfull{alu}, memory, register file, and multiplexers. For instance, the control unit will specify whether the \ALU should perform an addition or subtraction, whether data should be read from or written to memory, and which registers should be accessed for reading or writing data \cite{chatgpt}.
+
+This is how i asserted the signals depending on the instructions:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|} 
+\hline
+ &\texttt{add} & \texttt{sd} & \texttt{ld} & \texttt{beq}, \texttt{bge} & \texttt{addi} & \texttt{nop} and unknown \\ 
+ \hline
+ \texttt{branch} & \xmark & \xmark & \xmark & \cmark & \xmark & \xmark \\ 
+ \hline
+ \texttt{memory read} & \xmark & \xmark & \cmark & \xmark & \xmark & \xmark \\
+ \hline
+ \texttt{memory write} & \xmark & \cmark & \xmark & \xmark & \xmark & \xmark\\
+ \hline
+ \texttt{register write} &\cmark & \xmark & \cmark & \xmark & \cmark & \xmark \\
+ \hline
+  \texttt{ALU source} &\xmark & \cmark & \cmark & \xmark & \cmark & \xmark \\
+ \hline
+  \texttt{register source} &\xmark & \xmark & \cmark & \xmark & \xmark & \xmark \\
+ \hline
+\end{tabular}
+\end{center}
+
+
+
+\subsection{Immediate generator}\label{immgen}
+The aim of this component is to sign extend the immediate that is encoded in some instructions. This encoding for all the types that requires it and that I have implemented, specify the value with a 12-bit number, this immediate is than combined with the data in the register (for example to calculate an address for \texttt{ld} and \texttt{sd}) and must be a 64-bit number. For this reason this component enlarge the representation of the number according to his sign. To perform this operation it takes in input the whole instruction, it extract the \texttt{opcode} and read the number accordingly.
+\subsection*{Composition}
+
+
+\section{Execute}
+\begin{minipage}{0.48\textwidth}
+This stage is responsible of incrementing the \PC to point the right instruction in the program memory.
+This instruction will be decoded and executed in the appropriate way during the following \glspl{clk}. 
+
+The aim of this step is to 'choose' the right source for the \PC register that has to increment during execution of instructions that does not modify the program flow, but must load the right value if instructions like \texttt{beq} or \texttt{bge} are in the program and it is present some conditional execution.
+In case of \gls{stall} must hold the same value and fetch the same instruction.
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+  \includegraphics[width=0.9\textwidth,right,trim={400 150 400 150},clip]{components/Execute.png}
+\end{minipage}
+
+\subsection{\ALU}
+
+\subsection{\ALU control unit} \label{ALU_CU}
+
+\subsection*{Composition}
+
+
+\section{Memory Access}
+\begin{minipage}{0.48\textwidth}
+This stage is responsible of incrementing the \PC to point the right instruction in the program memory.
+This instruction will be decoded and executed in the appropriate way during the following \glspl{clk}. 
+
+The aim of this step is to 'choose' the right source for the \PC register that has to increment during execution of instructions that does not modify the program flow, but must load the right value if instructions like \texttt{beq} or \texttt{bge} are in the program and it is present some conditional execution.
+In case of \gls{stall} must hold the same value and fetch the same instruction.
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+  \includegraphics[width=0.9\textwidth,right,trim={350 150 350 150},clip]{components/MemoryAccess.png}
+\end{minipage}
+
+\subsection{Data memory}\label{D_MEM}
+
+\subsection*{Composition}
+
+\section{Write Back and top hierarchy processor}\label{WB}
+This stage is responsible of incrementing the \PC to point the right instruction in the program memory.
+This instruction will be decoded and executed in the appropriate way during the following \glspl{clk}. 
+
+The aim of this step is to 'choose' the right source for the \PC register that has to increment during execution of instructions that does not modify the program flow, but must load the right value if instructions like \texttt{beq} or \texttt{bge} are in the program and it is present some conditional execution.
+In case of \gls{stall} must hold the same value and fetch the same instruction.
+
+\subsection{Hazard detection unit}\label{HDU}
+\begin{minipage}{0.48\textwidth}
+  Ecco
+\end{minipage}
+\begin{minipage}{0.48\textwidth}
+  \includegraphics[width=0.9\textwidth,right,trim={450 150 450 150},clip]{components/HDU.png}
+\end{minipage}
+
+\subsection*{Composition}
+
+\includepdf[angle=90,pages=-]{processor}
+
+\section{Conclusion}
+
+\section{Appendix}\label{prompts}
+To retrieve this answers from \texttt{Chat GPT} I didn't provided more context than the one present in the prompts. I used clean and independent chat stateless sessions.
+\subsection{Prompt and reply to describe the PC}\label{prompt:pc}
+\begin{itshape}
+    I am doing a project for which I am implementing a 5 stage piplelined RISCV processor in VHDL, my first step is the Fetch step. In this step there is the Program Counter. Can you describe the aim and the general functioning of a Program Counter just using text, no code and no lists? I have to add it to the report that I am writing.
+\end{itshape}
+
+\begin{spverbatim}
+The Program Counter (PC) is a fundamental component in the Fetch stage of a pipelined RISCV processor. Its primary aim is to hold the address of the next instruction to be executed. At the beginning of each instruction cycle, the Program Counter's value is used to fetch the instruction from memory. Once the instruction is fetched, the PC is typically incremented to point to the subsequent instruction in memory. This increment is usually by a fixed amount, corresponding to the size of each instruction in the instruction set architecture.
+
+In more detail, during the Fetch stage, the PC's current value is sent to memory to retrieve the instruction located at that address. After this, the PC is updated to reflect the address of the next instruction. This update might simply be an increment by a constant value, or it might involve more complex operations, such as adding an offset for branch instructions. The ability to change the PC value dynamically is crucial for handling control flow changes, like jumps, branches, and subroutine calls, enabling the processor to execute instructions out of sequential order when required.
+
+The PC operates in a cycle, ensuring a continuous flow of instruction addresses, which drives the overall execution process of the processor. Its design ensures that the processor can systematically and efficiently fetch and execute a sequence of instructions, while also providing flexibility for complex control flows in the program execution.
+\end{spverbatim}
+
+
+\subsection{Prompt and reply to describe the program memory}\label{prompt:pmem}
+\begin{itshape}
+I am doing a project for which I am implementing a 5 stage pipelined RISCV processor in VHDL, my
+first step is the Fetch step. In this step there is the Program Memory (different from the data memory). Can you describe the aim and
+the general functioning of a program memory just using text, no code and no lists? I have to add it to
+the report that I am writing.
+\end{itshape}
+
+\begin{spverbatim}
+The program memory in a 5-stage pipelined RISC-V processor serves a critical role in the Fetch stage, where its primary aim is to store the instructions that the processor will execute. This memory is distinct from the data memory, which holds the data operands and results of instructions. The program memory is typically implemented as a read-only memory (ROM) or a non-volatile memory that retains the stored instructions even when the power is off, though it can also be implemented using RAM in certain designs for flexibility during development.
+
+In the Fetch stage, the program memory works closely with the program counter (PC), which keeps track of the address of the next instruction to be executed. The Fetch stage retrieves or "fetches" the instruction stored at the address specified by the program counter. This involves the program counter sending the address to the program memory, which then outputs the instruction located at that address. This fetched instruction is then passed on to the next stage in the pipeline for decoding and execution.
+
+The efficiency and speed of the program memory are crucial, as the Fetch stage sets the pace for the entire instruction execution pipeline. If the program memory access is slow, it can create bottlenecks that degrade the overall performance of the processor. To mitigate this, program memories are often designed with fast access times and may utilize caching mechanisms to further enhance performance.
+
+Overall, the program memory's functionality is foundational to the operation of a pipelined processor, ensuring that instructions are promptly and accurately fetched, allowing for smooth and efficient instruction execution throughout the pipeline stages.
+\end{spverbatim}
+
+
+\subsection{Prompt and reply to describe the register file}\label{prompt:regfile}
+\begin{itshape}
+I am doing a project for which I am implementing a 5 stage piplelined RISCV processor in VHDL, my
+second step is the Decode step. In this step there is the Register File. Can you describe the aim and
+the general functioning of a register file just using text, no code and no lists? I have to add it to
+the report that I am writing.
+\end{itshape}
+
+\begin{spverbatim}
+The register file in a RISC-V processor is a crucial component within the decode stage of the pipeline. Its primary aim is to store and provide rapid access to the processor's general-purpose registers, which are used to hold intermediate data and addresses during instruction execution.
+
+The register file consists of an array of registers, typically 32 in the case of a standard RISC-V implementation, each capable of holding a fixed amount of data, such as 32 or 64 bits. When an instruction is fetched and decoded, the register file is accessed to retrieve the values stored in the source registers specified by the instruction. This step is essential because these values are needed for the execution of various operations, such as arithmetic computations, logical operations, and address calculations.
+
+During the decode stage, the instruction is examined to determine which registers are being referenced. The register file then reads the values from the specified source registers and makes them available for the subsequent execution stage. In addition to reading data, the register file also supports writing data back to a register. This write operation typically occurs in the write-back stage of the pipeline, where the result of an instruction is written back into a designated destination register.
+
+The register file is designed for fast access to support the high-speed requirements of the pipeline. It achieves this by using dual read ports and one write port, allowing two registers to be read simultaneously and one register to be written at the same time, which is a common requirement for most instructions. This parallelism is essential for maintaining the efficiency and throughput of the pipelined processor.
+
+In summary, the register file serves as a high-speed storage and retrieval unit for the processor's registers, playing a vital role in ensuring that the necessary data is readily available for each instruction as it progresses through the pipeline. Its efficient design is fundamental to achieving the overall performance goals of the processor.
+\end{spverbatim}
+
+
+\subsection{Prompt and reply to describe the control unit}\label{prompt:regfile}
+
+\begin{itshape}
+I am doing a project for which I am implementing a 5 stage piplelined RISCV processor in VHDL, my
+second step is the Decode step. In this step there is the Control Unit. Can you describe the aim and
+the general functioning of a control unit just using text, no code and no lists? I have to add it to
+the report that I am writing.
+\end{itshape}
+
+\begin{spverbatim}
+The control unit in a RISC-V processor plays a critical role in coordinating the operations of the processor by generating the necessary control signals based on the instruction being executed. Its primary aim is to interpret the fetched instruction and generate the appropriate signals to direct the activities of other components within the processor, ensuring that each instruction is executed correctly and efficiently.
+
+In the decode stage, the control unit reads the instruction, which contains the operation code (opcode) and, in some cases, additional function codes. By analyzing these codes, the control unit determines the nature of the operation to be performed, such as arithmetic, logic, memory access, or branch operations. Based on this determination, it generates control signals that guide the subsequent stages of the pipeline.
+
+These control signals dictate the behavior of various parts of the processor, including the arithmetic logic unit (ALU), memory, register file, and multiplexers. For instance, the control unit will specify whether the ALU should perform an addition or subtraction, whether data should be read from or written to memory, and which registers should be accessed for reading or writing data.
+
+The control unit ensures that the correct data paths are selected, enabling the processor to handle different types of instructions in a streamlined manner. It orchestrates the timing of operations, managing the flow of data through the pipeline stages to prevent conflicts and ensure that each instruction progresses smoothly from fetch to execution to write-back.
+
+In summary, the control unit is essential for decoding instructions and generating the necessary control signals to manage the processor's operations, enabling the processor to execute a wide variety of instructions efficiently and accurately.
+\end{spverbatim}
+
+%\includesvg[angle=90,origin=c,height=\textheight,width=\textwidth]{output}
+
+\clearpage
+\printglossary
+\clearpage
+\nocite{*}
+\bibliographystyle{alpha}
+\bibliography{sample}
+
+
+\end{document}
