@@ -4,13 +4,13 @@
 !**/*.c
 !Schematics/**/*
 !Schematics/
-!FullReport/**/*
+!FullReport/
+!FullReport/**/*.tex
+!FullReport/**/*.bib
 !Presentation/
 !Presentation/**/*
 !Code/
 !Code/**/*
-!**/*.tex
-!**/*.bib
 !**/*.png
 !**/*.pdf
 
