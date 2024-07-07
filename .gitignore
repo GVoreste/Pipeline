@@ -5,7 +5,9 @@
 !Schematics/**/*
 !Schematics/
 !FullReport/
-!FullReport/**
+!FullReport/**/*.pdf
+!FullReport/**/*.tex
+!FullReport/**/*.png
 !Presentation/
 !Presentation/**/*
 !Code/
